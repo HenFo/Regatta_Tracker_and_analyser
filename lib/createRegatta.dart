@@ -15,12 +15,8 @@ class CreateRegatta extends StatefulWidget {
   final Function editCallback;
   final Regatta editRegatta;
 
-  final Color slColor = Colors.amber;
-  final Color gateColor = Colors.lightGreen;
-  final Color tmColor = Colors.blueGrey;
-
-  final proj4.ProjectionTuple projTuple = new proj4.ProjectionTuple(
-      fromProj: proj4.Projection.WGS84, toProj: proj4.Projection.GOOGLE);
+  // final proj4.ProjectionTuple projTuple = new proj4.ProjectionTuple(
+  //     fromProj: proj4.Projection.WGS84, toProj: proj4.Projection.GOOGLE);
 
   CreateRegatta(this.id, this.name,
       [this.saveCallback, this.editRegatta, this.editCallback]);
@@ -109,115 +105,6 @@ class _CreateRegattaState extends State<CreateRegatta> {
 
   @override
   Widget build(BuildContext context) {
-    Polyline mapLineS;
-    Polyline mapLineSCenter;
-
-    Polyline mapLineG;
-    Polyline mapLineGCenter;
-
-    List<CircleMarker> mapCircles = [];
-    List<Polyline> mapLines = [];
-
-    // Map features for Startingline
-    mapLineS = new Polyline(
-        points: sl.toLatLng(),
-        strokeWidth: 4,
-        color: widget.slColor,
-        borderColor: Colors.black);
-
-    mapCircles.addAll(sl.toLatLng().map((latlng) {
-      return CircleMarker(
-          point: latlng,
-          color: widget.slColor.withOpacity(0.5),
-          useRadiusInMeter: true,
-          borderStrokeWidth: 1,
-          borderColor: Colors.black26,
-          radius: 3);
-    }).toList());
-
-    mapCircles.addAll(sl.toLatLng().map((latlng) {
-      return CircleMarker(
-          point: latlng,
-          useRadiusInMeter: true,
-          radius: 1,
-          color: Colors.black);
-    }).toList());
-
-    //Center line start
-    if (sl.isComplete()) {
-      mapLineSCenter = new Polyline(
-          points: sl
-              .transformProjection(widget.projTuple)
-              .getOrthogonalLine(centerlineLength)
-              .transformProjection(widget.projTuple, inverse: true)
-              .toLatLng(),
-          strokeWidth: 3,
-          color: widget.slColor,
-          isDotted: true,
-          borderColor: Colors.black);
-    }
-
-    // Map features for Gate
-    mapLineG = new Polyline(
-        points: gate.toLatLng(),
-        strokeWidth: 3,
-        color: widget.gateColor,
-        borderColor: Colors.black,
-        isDotted: true);
-
-    mapCircles.addAll(gate.toLatLng().map((latlng) {
-      return CircleMarker(
-          point: latlng,
-          color: widget.gateColor.withOpacity(0.5),
-          useRadiusInMeter: true,
-          borderStrokeWidth: 1,
-          borderColor: Colors.black26,
-          radius: 10);
-    }).toList());
-
-    mapCircles.addAll(gate.toLatLng().map((latlng) {
-      return CircleMarker(
-          point: latlng,
-          useRadiusInMeter: true,
-          radius: 1,
-          color: Colors.black);
-    }).toList());
-
-    // center line gate
-    if (gate.isComplete()) {
-      mapLineGCenter = new Polyline(
-          points: gate
-              .transformProjection(widget.projTuple)
-              .getOrthogonalLine(centerlineLength)
-              .transformProjection(widget.projTuple, inverse: true)
-              .toLatLng(),
-          strokeWidth: 2,
-          color: widget.gateColor,
-          borderColor: Colors.black,
-          isDotted: true);
-    }
-
-    mapLines.addAll([mapLineS, mapLineG]);
-    if (orthoSl && mapLineSCenter != null) mapLines.add(mapLineSCenter);
-    if (orthoGate && mapLineGCenter != null) mapLines.add(mapLineGCenter);
-
-    // Map features for Topmark
-    if (tm != null) {
-      LatLng point = tm.toLatLng();
-      mapCircles.add(new CircleMarker(
-          point: point,
-          useRadiusInMeter: true,
-          radius: 14,
-          borderColor: Colors.black26,
-          borderStrokeWidth: 1,
-          color: widget.tmColor.withOpacity(0.5)));
-      mapCircles.add(new CircleMarker(
-          point: point,
-          useRadiusInMeter: true,
-          radius: 1,
-          color: Colors.black));
-    }
-
     return Scaffold(
         appBar: AppBar(
           title: Text("Create your course"),
@@ -229,7 +116,8 @@ class _CreateRegattaState extends State<CreateRegatta> {
         ),
         body: Column(
           children: <Widget>[
-            Map(mapController, mapLines, mapCircles, lastPosition),
+            Map(mapController, lastPosition, tm, sl, gate, centerlineLength,
+                orthoSl, orthoGate),
             EditButtons(mapController, _addToMap, _save)
           ],
         ));
