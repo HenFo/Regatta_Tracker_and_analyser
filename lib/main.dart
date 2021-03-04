@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/createRegatta.dart';
-import "homePage.dart";
+import 'createing_and_editing_regatta/createRegatta.dart';
+import "main_page/homePage.dart";
 
 void main() {
   runApp(MyApp());

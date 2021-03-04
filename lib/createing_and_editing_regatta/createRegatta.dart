@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'drawerOptions.dart';
+import '../drawerOptions.dart';
 import 'editButtons.dart';
-import "regatta.dart";
+import "../regatta.dart";
 import "package:flutter_map/flutter_map.dart";
 import "package:latlong/latlong.dart";
 import "dart:developer" as dev;
-import "package:proj4dart/proj4dart.dart" as proj4;
-import "map.dart";
+import "../Map.dart";
 
 class CreateRegatta extends StatefulWidget {
   final String name;

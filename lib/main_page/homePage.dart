@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/mainList.dart';
-import "regatta.dart";
-import "createRegatta.dart";
+import 'mainList.dart';
+import "../regatta.dart";
+import "../createing_and_editing_regatta/createRegatta.dart";
 import "dart:developer" as dev;
 
 class HomePage extends StatefulWidget {
