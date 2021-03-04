@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class PlayRegatta extends StatefulWidget {
-
   @override
   _PlayRegattaState createState() => _PlayRegattaState();
 }
@@ -15,11 +14,10 @@ class _PlayRegattaState extends State<PlayRegatta> {
           // actions: <Widget>[_optionsMenu()],
         ),
         endDrawer: Drawer(
-          child: _drawerContent(),
-        ),
+            // child: _drawerContent(),
+            ),
         body: Column(
-          children: <Widget>[_showMap(), _showButtons()],
-        ));
-  }
+            // children: <Widget>[_showMap(), _showButtons()],
+            ));
   }
 }

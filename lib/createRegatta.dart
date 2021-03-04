@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'drawerOptions.dart';
+import 'editButtons.dart';
 import "regatta.dart";
 import "package:flutter_map/flutter_map.dart";
 import "package:latlong/latlong.dart";
 import "dart:developer" as dev;
 import "package:proj4dart/proj4dart.dart" as proj4;
-import "snackbarSaveCallback.dart";
+import "map.dart";
 
 class CreateRegatta extends StatefulWidget {
   final String name;
-  final int ID;
+  final int id;
   final Function saveCallback;
   final Function editCallback;
   final Regatta editRegatta;
@@ -20,7 +22,7 @@ class CreateRegatta extends StatefulWidget {
   final proj4.ProjectionTuple projTuple = new proj4.ProjectionTuple(
       fromProj: proj4.Projection.WGS84, toProj: proj4.Projection.GOOGLE);
 
-  CreateRegatta(this.ID, this.name,
+  CreateRegatta(this.id, this.name,
       [this.saveCallback, this.editRegatta, this.editCallback]);
 
   @override
@@ -49,6 +51,18 @@ class _CreateRegattaState extends State<CreateRegatta> {
   MyPoint slStart;
   MyPoint slEnd;
 
+  void setCenterlineLength(double newLength) {
+    setState(() => centerlineLength = newLength);
+  }
+
+  void setOrthoSl(bool newValue) {
+    setState(() => orthoSl = newValue);
+  }
+
+  void setOrthoGate(bool newValue) {
+    setState(() => orthoGate = newValue);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -66,7 +80,7 @@ class _CreateRegattaState extends State<CreateRegatta> {
     dev.log("create Object", name: "_save start");
     if (gate.isComplete() && sl.isComplete()) {
       try {
-        Regatta regattaSaveObject = new Regatta(widget.ID, widget.name);
+        Regatta regattaSaveObject = new Regatta(widget.id, widget.name);
         regattaSaveObject.topmark = tm;
         regattaSaveObject.startingline = sl;
         regattaSaveObject.gate = gate;
@@ -84,7 +98,7 @@ class _CreateRegattaState extends State<CreateRegatta> {
           widget.saveCallback(regattaSaveObject);
         }
 
-        Navigator.pop(context);
+        // Navigator.pop(context);
         return true;
       } catch (e) {
         dev.log(e.toString());
@@ -202,149 +216,6 @@ class _CreateRegattaState extends State<CreateRegatta> {
           useRadiusInMeter: true,
           radius: 1,
           color: Colors.black));
-
-      // mapMarker.add(new Marker(point: point, width: 30, height: 30));
-    }
-
-    Widget _showMap() {
-      return Flexible(
-          child: FlutterMap(
-        mapController: mapController,
-        options: MapOptions(
-            bounds: lastPosition,
-            zoom: 17,
-            onTap: (latlng) => dev.log(latlng.toString(), name: "taped at:"),
-            onLongPress: (latlng) => dev.log(
-                mapController.bounds.northWest.toString() +
-                    mapController.bounds.southEast.toString())),
-        layers: [
-          TileLayerOptions(
-            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            subdomains: ['a', 'b', 'c'],
-            tileProvider: NonCachingNetworkTileProvider(),
-          ),
-          // MarkerLayerOptions(markers: mapMarker),
-          PolylineLayerOptions(polylines: mapLines),
-          CircleLayerOptions(circles: mapCircles),
-        ],
-      ));
-    }
-
-    Widget _showButtons() {
-      return Padding(
-        padding: EdgeInsets.all(10),
-        child: Column(
-          children: <Widget>[
-            ElevatedButton(
-              child: Text("Topmark", textAlign: TextAlign.center),
-              style: ElevatedButton.styleFrom(primary: Colors.blue),
-              onPressed: () {
-                _addToMap(0, mapController.center);
-              },
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                ElevatedButton(
-                  child: Text(
-                    "Startingline - Start",
-                    textAlign: TextAlign.center,
-                  ),
-                  style: ElevatedButton.styleFrom(primary: Colors.orange[700]),
-                  onPressed: () {
-                    _addToMap(1, mapController.center);
-                  },
-                ),
-                ElevatedButton(
-                  child: Text(
-                    "Startingline - End",
-                    textAlign: TextAlign.center,
-                  ),
-                  style: ElevatedButton.styleFrom(primary: Colors.orange),
-                  onPressed: () {
-                    _addToMap(2, mapController.center);
-                  },
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                ElevatedButton(
-                  child: Text("Gate - Start", textAlign: TextAlign.center),
-                  style: ElevatedButton.styleFrom(primary: Colors.green[700]),
-                  onPressed: () {
-                    _addToMap(3, mapController.center);
-                  },
-                ),
-                ElevatedButton(
-                  child: Text("Gate - End", textAlign: TextAlign.center),
-                  style: ElevatedButton.styleFrom(primary: Colors.green[300]),
-                  onPressed: () {
-                    _addToMap(4, mapController.center);
-                  },
-                ),
-              ],
-            ),
-            SnackBarPage(_save)
-          ],
-        ),
-      );
-    }
-
-    Widget _drawerContent() {
-      centerlineLengthController.text = centerlineLength.toString();
-      return ListView(
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(
-              color: Colors.blue,
-            ),
-            child: Text(
-              'Options',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-              ),
-            ),
-          ),
-          StatefulBuilder(
-              builder: (BuildContext context, StateSetter setStateCheckbox) {
-            return CheckboxListTile(
-                title: Text("Mark centerline Startingline"),
-                value: orthoSl,
-                onChanged: (newValue) {
-                  setStateCheckbox(() {
-                    setState(() => orthoSl = newValue);
-                  });
-                },
-                controlAffinity: ListTileControlAffinity.leading);
-          }),
-          StatefulBuilder(
-              builder: (BuildContext context, StateSetter setStateCheckbox) {
-            return CheckboxListTile(
-                title: Text("Mark centerline gate"),
-                value: orthoGate,
-                onChanged: (newValue) {
-                  setStateCheckbox(() {
-                    setState(() => orthoGate = newValue);
-                  });
-                },
-                controlAffinity: ListTileControlAffinity.leading);
-          }),
-          ListTile(
-            title: TextField(
-              controller: centerlineLengthController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(suffixText: "m"),
-              onSubmitted: (val) {
-                setState(() => centerlineLength = double.tryParse(val));
-              },
-            ),
-            trailing: Text("Length of Centerline"),
-          )
-        ],
-      );
     }
 
     return Scaffold(
@@ -353,10 +224,14 @@ class _CreateRegattaState extends State<CreateRegatta> {
           // actions: <Widget>[_optionsMenu()],
         ),
         endDrawer: Drawer(
-          child: _drawerContent(),
+          child: DrawerOptions(setCenterlineLength, setOrthoSl, setOrthoGate,
+              centerlineLength, orthoSl, orthoGate),
         ),
         body: Column(
-          children: <Widget>[_showMap(), _showButtons()],
+          children: <Widget>[
+            Map(mapController, mapLines, mapCircles, lastPosition),
+            EditButtons(mapController, _addToMap, _save)
+          ],
         ));
   }
 

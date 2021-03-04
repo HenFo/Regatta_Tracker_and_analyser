@@ -36,11 +36,11 @@ class _HomePageState extends State<HomePage> {
     setState(() => regattas[regatta.ID] = regatta);
   }
 
-  void playRegatta(int indexOfRegatta) {
-    var regatta = regattas[indexOfRegatta];
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => PlayRegatta(regatta)));
-  }
+  // void playRegatta(int indexOfRegatta) {
+  //   var regatta = regattas[indexOfRegatta];
+  //   Navigator.push(
+  //       context, MaterialPageRoute(builder: (context) => PlayRegatta(regatta)));
+  // }
 
   TextEditingController _regattaNameController = TextEditingController();
   String newName;

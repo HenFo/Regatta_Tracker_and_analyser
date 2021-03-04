@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import "package:flutter_map/flutter_map.dart";
 import "dart:developer" as dev;
 
-class Map extends StatefulWidget {
+class Map extends StatelessWidget {
+
   final MapController mapController;
   final List<Polyline> mapLines;
   final List<CircleMarker> mapCircles;
@@ -11,17 +12,12 @@ class Map extends StatefulWidget {
   Map(this.mapController, this.mapLines, this.mapCircles, this.bounds);
 
   @override
-  _MapState createState() => _MapState();
-}
-
-class _MapState extends State<Map> {
-  @override
   Widget build(BuildContext context) {
     return Flexible(
         child: FlutterMap(
-      mapController: widget.mapController,
+      mapController: this.mapController,
       options: MapOptions(
-          bounds: widget.bounds,
+          bounds: this.bounds,
           zoom: 17,
           onTap: (latlng) => dev.log(latlng.toString(), name: "taped at:")),
       layers: [
@@ -31,8 +27,8 @@ class _MapState extends State<Map> {
           tileProvider: NonCachingNetworkTileProvider(),
         ),
         // MarkerLayerOptions(markers: mapMarker),
-        PolylineLayerOptions(polylines: widget.mapLines),
-        CircleLayerOptions(circles: widget.mapCircles),
+        PolylineLayerOptions(polylines: this.mapLines),
+        CircleLayerOptions(circles: this.mapCircles),
       ],
     ));
   }
