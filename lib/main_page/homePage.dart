@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/mainList.dart';
-import "regatta.dart";
-import "createRegatta.dart";
+import '../playRegatta.dart';
+import 'mainList.dart';
+import "../regatta.dart";
+import "../createing_and_editing_regatta/createRegatta.dart";
 import "dart:developer" as dev;
 
 class HomePage extends StatefulWidget {
@@ -28,12 +29,12 @@ class _HomePageState extends State<HomePage> {
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => CreateRegatta(regatta.ID, regatta.name, null,
+            builder: (context) => CreateRegatta(regatta.id, regatta.name, null,
                 regatta, this.updateRegattaInList)));
   }
 
   void updateRegattaInList(Regatta regatta) {
-    setState(() => regattas[regatta.ID] = regatta);
+    setState(() => regattas[regatta.id] = regatta);
   }
 
   void playRegatta(int indexOfRegatta) {
@@ -96,7 +97,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(title: Text("Your regatta courses")),
-        body: MainList(this.regattas, this.editRegatta, null),
+        body: MainList(this.regattas, this.editRegatta, this.playRegatta),
         floatingActionButton: FloatingActionButton(
             child: Icon(Icons.add),
             backgroundColor: Colors.amber,

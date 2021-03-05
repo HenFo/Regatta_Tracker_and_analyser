@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import "dart:developer" as dev;
 
-class SnackBarPage extends StatelessWidget {
-  final Function callback;
+class SnackBarOnSave extends StatelessWidget {
+  final Function saveCallback;
 
-  SnackBarPage(this.callback);
+  SnackBarOnSave(this.saveCallback);
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,7 @@ class SnackBarPage extends StatelessWidget {
               dev.log("Snackbar called", name: "snackbar");
 
               var text = "";
-              if (callback()) {
+              if (saveCallback()) {
                 text = "Saved successfully";
               } else {
                 text = "An Error accoured";

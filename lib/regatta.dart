@@ -4,17 +4,57 @@ import "package:latlong/latlong.dart";
 import "package:proj4dart/proj4dart.dart";
 
 class Regatta {
-  final int ID;
+  final int id;
   final String name;
 
   Topmark topmark;
-  Startingline startingline;
-  Gate gate;
+  Startingline startingline = new Startingline(null, null);
+  Gate gate = new Gate(null, null);
   double gateRadius;
-  LatLngBounds bbox;
   String location = "Earth";
 
-  Regatta(this.ID, this.name);
+  RegattaOptions options = new RegattaOptions();
+
+  Regatta(this.id, this.name);
+
+  LatLngBounds calculateBbox() {
+    var points = <LatLng>[];
+    if (topmark != null) {
+      points.add(topmark.toLatLng());
+    }
+
+    points.addAll(startingline.toLatLng());
+    points.addAll(gate.toLatLng());
+
+    var bounds = LatLngBounds.fromPoints(points);
+    return bounds;
+  }
+}
+
+class RegattaOptions {
+  double gateRadius = 7;
+  double startinglineRadius = 3;
+  double centerlineLength = 300.0;
+  bool visibilitySlCenterline = true;
+  bool visibilityGateCenterline = false;
+  LatLng center = new LatLng(51.956074, 7.614565);
+  // int zoomLevel = 17;
+  // LatLngBounds bbox = new LatLngBounds(
+  //     LatLng(51.958333, 7.611466), LatLng(51.954324, 7.618302));
+
+  RegattaOptions clone() {
+    var options = new RegattaOptions();
+    // options.bbox = this.bbox;
+    options.centerlineLength = this.centerlineLength;
+    options.gateRadius = this.gateRadius;
+    options.startinglineRadius = this.startinglineRadius;
+    options.visibilityGateCenterline = this.visibilityGateCenterline;
+    options.visibilitySlCenterline = this.visibilitySlCenterline;
+    options.center = this.center;
+    // options.zoomLevel = this.zoomLevel;
+
+    return options;
+  }
 }
 
 class MyPoint extends Point {
@@ -22,6 +62,10 @@ class MyPoint extends Point {
   final double y;
 
   MyPoint(this.x, this.y);
+
+  bool equals(MyPoint otherPoint) {
+    return (this.x == otherPoint.x) && (this.y == otherPoint.y);
+  }
 
   MyPoint transformProjection(ProjectionTuple projTuple,
       {bool inverse = false}) {
@@ -35,19 +79,6 @@ class MyPoint extends Point {
   }
 
   double getGreatCircleDistanceToPoint(MyPoint otherPoint) {
-    // var r = 6371e3; // metres
-    // var phi1 = this.y * pi / 180; // phi, lambda in radians
-    // var phi2 = otherPoint.y * pi / 180;
-    // var deltaPhi = (otherPoint.y - this.y) * pi / 180;
-    // var deltaLambda = (otherPoint.x - this.x) * pi / 180;
-
-    // var a = sin(deltaPhi / 2) * sin(deltaPhi / 2) +
-    //     cos(phi1) * cos(phi2) * sin(deltaLambda / 2) * sin(deltaLambda / 2);
-    // var c = 2 * atan2(sqrt(a), sqrt(1 - a));
-
-    // var d = r * c; // in metres
-    // return d;
-
     var p1 = this.toLatLng();
     var p2 = otherPoint.toLatLng();
     var distance = Distance(calculator: Haversine());
@@ -120,6 +151,19 @@ class Line {
 
   Line(this.p1, this.p2);
 
+  bool equals(Line otherLine) {
+    var a = this.p1.equals(otherLine.p1);
+    var a2 = this.p1.equals(otherLine.p2);
+    var b = this.p2.equals(otherLine.p2);
+    var b2 = this.p2.equals(otherLine.p1);
+
+    return (a && b) || (a2 && b2);
+  }
+
+  bool isActualLine() {
+    return !this.p1.equals(this.p2);
+  }
+
   Line transformProjection(ProjectionTuple projTuple, {bool inverse = false}) {
     var p1T = p1.transformProjection(projTuple, inverse: inverse);
     var p2T = p2.transformProjection(projTuple, inverse: inverse);
@@ -129,6 +173,11 @@ class Line {
 
   bool isComplete() {
     return (p1 != null && p2 != null);
+  }
+
+  MyPoint getCenter() {
+    Vector v = new Vector(p1, p2);
+    return v.getPointOnLine(this.getEuclideanDistance() / 2);
   }
 
   Line getOrthogonalLine(
