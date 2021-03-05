@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:proj4dart/proj4dart.dart' as proj4;
 import '../drawerOptions.dart';
 import 'editButtons.dart';
 import "../regatta.dart";
@@ -14,9 +15,6 @@ class CreateRegatta extends StatefulWidget {
   final Function editCallback;
   final Regatta editRegatta;
 
-  // final proj4.ProjectionTuple projTuple = new proj4.ProjectionTuple(
-  //     fromProj: proj4.Projection.WGS84, toProj: proj4.Projection.GOOGLE);
-
   CreateRegatta(this.id, this.name,
       [this.saveCallback, this.editRegatta, this.editCallback]);
 
@@ -26,71 +24,55 @@ class CreateRegatta extends StatefulWidget {
 
 class _CreateRegattaState extends State<CreateRegatta> {
   //Option variables:
-  double centerlineLength = 300;
-  TextEditingController centerlineLengthController = TextEditingController();
+  Regatta regatta;
+  RegattaOptions localOptions;
 
   MapController mapController;
-  LatLngBounds lastPosition =
-      new LatLngBounds(LatLng(51.95762, 7.612692), LatLng(51.955032, 7.617106));
 
-  bool orthoSl = true;
-  bool orthoGate = false;
-
-  Topmark tm;
-
-  Gate gate = new Gate(null, null);
   MyPoint gateStart;
   MyPoint gateEnd;
 
-  Startingline sl = new Startingline(null, null);
   MyPoint slStart;
   MyPoint slEnd;
-
-  void setCenterlineLength(double newLength) {
-    setState(() => centerlineLength = newLength);
-  }
-
-  void setOrthoSl(bool newValue) {
-    setState(() => orthoSl = newValue);
-  }
-
-  void setOrthoGate(bool newValue) {
-    setState(() => orthoGate = newValue);
-  }
 
   @override
   void initState() {
     super.initState();
     mapController = MapController();
+    regatta = new Regatta(widget.id, widget.name);
 
     if (widget.editRegatta != null) {
-      tm = widget.editRegatta.topmark;
-      sl = widget.editRegatta.startingline;
-      gate = widget.editRegatta.gate;
-      lastPosition = widget.editRegatta.bbox;
+      regatta.topmark = widget.editRegatta.topmark;
+      regatta.startingline = widget.editRegatta.startingline;
+      regatta.gate = widget.editRegatta.gate;
+      regatta.options = widget.editRegatta.options;
     }
+
+    localOptions = regatta.options.clone();
+  }
+
+  void setRegattaOptions(RegattaOptions newOptions) {
+    setState(() => localOptions = newOptions);
   }
 
   bool _save() {
     dev.log("create Object", name: "_save start");
-    if (gate.isComplete() && sl.isComplete()) {
+    if (regatta.gate.isComplete() && regatta.startingline.isComplete()) {
       try {
-        Regatta regattaSaveObject = new Regatta(widget.id, widget.name);
-        regattaSaveObject.topmark = tm;
-        regattaSaveObject.startingline = sl;
-        regattaSaveObject.gate = gate;
-
-        var points = <LatLng>[];
-        points.add(tm.toLatLng());
-        points.addAll(sl.toLatLng());
-        points.addAll(gate.toLatLng());
-
-        regattaSaveObject.bbox = LatLngBounds.fromPoints(points);
+        // var bounds = regatta.calculateBbox();
+        var proj = proj4.ProjectionTuple(
+            fromProj: proj4.Projection.WGS84, toProj: proj4.Projection.GOOGLE);
+        localOptions.center = regatta.startingline
+            .transformProjection(proj)
+            .getCenter()
+            .transformProjection(proj, inverse: true)
+            .toLatLng();
+        regatta.options = localOptions;
 
         if (widget.editCallback != null) {
-          widget.editCallback(regattaSaveObject);
+          widget.editCallback(regatta);
         } else if (widget.saveCallback != null) {
-          widget.saveCallback(regattaSaveObject);
+          widget.saveCallback(regatta);
         }
 
         // Navigator.pop(context);
@@ -110,13 +92,11 @@ class _CreateRegattaState extends State<CreateRegatta> {
           // actions: <Widget>[_optionsMenu()],
         ),
         endDrawer: Drawer(
-          child: DrawerOptions(setCenterlineLength, setOrthoSl, setOrthoGate,
-              centerlineLength, orthoSl, orthoGate),
+          child: DrawerOptions(localOptions, this.setRegattaOptions),
         ),
         body: Column(
           children: <Widget>[
-            Map(mapController, lastPosition, tm, sl, gate, centerlineLength,
-                orthoSl, orthoGate),
+            RegattaMap(mapController, regatta, localOptions),
             EditButtons(mapController, _addToMap, _save)
           ],
         ));
@@ -133,27 +113,27 @@ class _CreateRegattaState extends State<CreateRegatta> {
     setState(() {
       switch (type) {
         case 0:
-          tm = new Topmark(pos.longitude, pos.latitude);
+          regatta.topmark = new Topmark(pos.longitude, pos.latitude);
           break;
 
         case 1:
           slStart = new MyPoint(pos.longitude, pos.latitude);
-          sl = new Startingline(slStart, slEnd);
+          regatta.startingline = new Startingline(slStart, slEnd);
           break;
 
         case 2:
           slEnd = new MyPoint(pos.longitude, pos.latitude);
-          sl = new Startingline(slStart, slEnd);
+          regatta.startingline = new Startingline(slStart, slEnd);
           break;
 
         case 3:
           gateStart = new MyPoint(pos.longitude, pos.latitude);
-          gate = new Gate(gateStart, gateEnd, radius: 5);
+          regatta.gate = new Gate(gateStart, gateEnd, radius: 5);
           break;
 
         case 4:
           gateEnd = new MyPoint(pos.longitude, pos.latitude);
-          gate = new Gate(gateStart, gateEnd, radius: 5);
+          regatta.gate = new Gate(gateStart, gateEnd, radius: 5);
           break;
       }
     });

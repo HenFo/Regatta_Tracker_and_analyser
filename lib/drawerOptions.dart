@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/regatta.dart';
 
 class DrawerOptions extends StatefulWidget {
-  final Function _setCenterLineLength;
-  final Function _setOrthoSl;
-  final Function _setOrthoGate;
-  final double curCenterLineLength;
-  final bool orthoSl;
-  final bool orthoGate;
+  final RegattaOptions options;
+  final Function callback;
 
-  DrawerOptions(this._setCenterLineLength, this._setOrthoSl, this._setOrthoGate,
-      this.curCenterLineLength, this.orthoSl, this.orthoGate);
+  DrawerOptions(this.options, this.callback);
 
   @override
   _DrawerOptionsState createState() => _DrawerOptionsState();
@@ -20,7 +16,8 @@ class _DrawerOptionsState extends State<DrawerOptions> {
 
   @override
   Widget build(BuildContext context) {
-    centerlineLengthController.text = widget.curCenterLineLength.toString();
+    centerlineLengthController.text =
+        widget.options.centerlineLength.toString();
     return ListView(
       children: [
         DrawerHeader(
@@ -37,20 +34,22 @@ class _DrawerOptionsState extends State<DrawerOptions> {
         ),
         CheckboxListTile(
             title: Text("Mark centerline Startingline"),
-            value: widget.orthoSl,
+            value: widget.options.visibilitySlCenterline,
             onChanged: (newValue) {
               setState(() {
-                widget._setOrthoSl(newValue);
+                widget.options.visibilitySlCenterline = newValue;
               });
+              widget.callback(widget.options);
             },
             controlAffinity: ListTileControlAffinity.leading),
         CheckboxListTile(
             title: Text("Mark centerline gate"),
-            value: widget.orthoGate,
+            value: widget.options.visibilityGateCenterline,
             onChanged: (newValue) {
               setState(() {
-                widget._setOrthoGate(newValue);
+                widget.options.visibilityGateCenterline = newValue;
               });
+              widget.callback(widget.options);
             },
             controlAffinity: ListTileControlAffinity.leading),
         ListTile(
@@ -59,7 +58,8 @@ class _DrawerOptionsState extends State<DrawerOptions> {
             keyboardType: TextInputType.number,
             decoration: InputDecoration(suffixText: "m"),
             onSubmitted: (val) {
-              widget._setCenterLineLength(double.tryParse(val));
+              widget.options.centerlineLength = double.tryParse(val);
+              widget.callback(widget.options);
             },
           ),
           trailing: Text("Length of Centerline"),

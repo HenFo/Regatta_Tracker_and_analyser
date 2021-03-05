@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../playRegatta.dart';
 import 'mainList.dart';
 import "../regatta.dart";
 import "../createing_and_editing_regatta/createRegatta.dart";
@@ -28,19 +29,19 @@ class _HomePageState extends State<HomePage> {
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => CreateRegatta(regatta.ID, regatta.name, null,
+            builder: (context) => CreateRegatta(regatta.id, regatta.name, null,
                 regatta, this.updateRegattaInList)));
   }
 
   void updateRegattaInList(Regatta regatta) {
-    setState(() => regattas[regatta.ID] = regatta);
+    setState(() => regattas[regatta.id] = regatta);
   }
 
-  // void playRegatta(int indexOfRegatta) {
-  //   var regatta = regattas[indexOfRegatta];
-  //   Navigator.push(
-  //       context, MaterialPageRoute(builder: (context) => PlayRegatta(regatta)));
-  // }
+  void playRegatta(int indexOfRegatta) {
+    var regatta = regattas[indexOfRegatta];
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => PlayRegatta(regatta)));
+  }
 
   TextEditingController _regattaNameController = TextEditingController();
   String newName;
@@ -96,7 +97,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(title: Text("Your regatta courses")),
-        body: MainList(this.regattas, this.editRegatta, null),
+        body: MainList(this.regattas, this.editRegatta, this.playRegatta),
         floatingActionButton: FloatingActionButton(
             child: Icon(Icons.add),
             backgroundColor: Colors.amber,
