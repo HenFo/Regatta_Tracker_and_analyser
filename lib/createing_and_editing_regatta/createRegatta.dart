@@ -46,6 +46,11 @@ class _CreateRegattaState extends State<CreateRegatta> {
       regatta.startingline = widget.editRegatta.startingline;
       regatta.gate = widget.editRegatta.gate;
       regatta.options = widget.editRegatta.options;
+
+      gateStart = regatta.gate.p1;
+      gateEnd = regatta.gate.p2;
+      slStart = regatta.startingline.p1;
+      slEnd = regatta.startingline.p2;
     }
 
     localOptions = regatta.options.clone();

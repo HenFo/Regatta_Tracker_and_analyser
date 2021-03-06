@@ -110,7 +110,8 @@ class _RegattaMapState extends State<RegattaMap> {
       currentLatLng =
           LatLng(_currentLocation.latitude, _currentLocation.longitude);
     } else {
-      currentLatLng = widget.regatta.options.center; //widget.regatta.topmark.toLatLng();
+      currentLatLng =
+          widget.regatta.options.center; //widget.regatta.topmark.toLatLng();
     }
 
     Polyline mapLineS;
@@ -123,7 +124,10 @@ class _RegattaMapState extends State<RegattaMap> {
     List<Polyline> mapLines = [];
 
     mapCircles.add(new CircleMarker(
-        radius: 5, useRadiusInMeter: true, color: Colors.deepPurple, point: currentLatLng));
+        radius: 5,
+        useRadiusInMeter: true,
+        color: Colors.deepPurple,
+        point: currentLatLng));
 
     // Map features for Startingline
     mapLineS = new Polyline(
@@ -230,43 +234,64 @@ class _RegattaMapState extends State<RegattaMap> {
     }
 
     return Flexible(
-        child: FlutterMap(
-      mapController: widget.mapController,
-      options: MapOptions(
+        child: Stack(children: [
+      FlutterMap(
+        mapController: widget.mapController,
+        options: MapOptions(
           center: currentLatLng,
           zoom: 17,
           onTap: (latlng) => dev.log(latlng.toString(), name: "taped at:"),
-          onLongPress: (latLng) {
-            setState(() {
-              _liveUpdate = !_liveUpdate;
-
-              if (_liveUpdate) {
-                interActiveFlags = InteractiveFlag.rotate |
-                    InteractiveFlag.pinchZoom |
-                    InteractiveFlag.doubleTapZoom;
-
-                Scaffold.of(context).showSnackBar(SnackBar(
-                  content: Text(
-                      'In live update mode only zoom and rotation are enable'),
-                ));
-              } else {
-                interActiveFlags = InteractiveFlag.all;
-                Scaffold.of(context).showSnackBar(SnackBar(
-                  content: Text('Live update deactivated'),
-                ));
-              }
-            });
-          }),
-      layers: [
-        TileLayerOptions(
-          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: ['a', 'b', 'c'],
-          tileProvider: NonCachingNetworkTileProvider(),
         ),
-        // MarkerLayerOptions(markers: mapMarker),
-        PolylineLayerOptions(polylines: mapLines),
-        CircleLayerOptions(circles: mapCircles),
-      ],
-    ));
+        layers: [
+          TileLayerOptions(
+            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            subdomains: ['a', 'b', 'c'],
+            tileProvider: NonCachingNetworkTileProvider(),
+          ),
+          // MarkerLayerOptions(markers: mapMarker),
+          PolylineLayerOptions(polylines: mapLines),
+          CircleLayerOptions(circles: mapCircles),
+        ],
+      ),
+      Padding(padding: EdgeInsets.only(left: 5), child: _gpsButton()),
+      Center(child: Icon(Icons.add)),
+    ]));
+  }
+
+  Widget _gpsButton() {
+    if (_liveUpdate) {
+      return ElevatedButton.icon(
+          icon: Icon(Icons.gps_fixed),
+          onPressed: _toggleGpsPosition,
+          label: Text("Unfix position \n from GPS"));
+    } else {
+      return ElevatedButton.icon(
+          icon: Icon(Icons.gps_not_fixed),
+          onPressed: _toggleGpsPosition,
+          label: Text("Fix position \n to GPS"));
+    }
+  }
+
+
+  void _toggleGpsPosition() {
+    setState(() {
+      _liveUpdate = !_liveUpdate;
+
+      if (_liveUpdate) {
+        interActiveFlags = InteractiveFlag.rotate |
+            InteractiveFlag.pinchZoom |
+            InteractiveFlag.doubleTapZoom;
+
+        Scaffold.of(context).showSnackBar(SnackBar(
+          content:
+              Text('In live update mode only zoom and rotation are enable'),
+        ));
+      } else {
+        interActiveFlags = InteractiveFlag.all;
+        Scaffold.of(context).showSnackBar(SnackBar(
+          content: Text('Live update deactivated'),
+        ));
+      }
+    });
   }
 }
