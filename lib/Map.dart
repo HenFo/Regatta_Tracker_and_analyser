@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import "package:flutter_map/flutter_map.dart";
@@ -6,6 +8,7 @@ import "dart:developer" as dev;
 import "regatta.dart";
 import "package:proj4dart/proj4dart.dart" as proj4;
 import 'package:location/location.dart';
+import "dart:math";
 
 class RegattaMap extends StatefulWidget {
   final MapController mapController;
@@ -16,9 +19,6 @@ class RegattaMap extends StatefulWidget {
   final Color gateColor = Colors.lightGreen;
   final Color tmColor = Colors.blueGrey;
 
-  final proj4.ProjectionTuple projTuple = new proj4.ProjectionTuple(
-      fromProj: proj4.Projection.WGS84, toProj: proj4.Projection.GOOGLE);
-
   RegattaMap(this.mapController, this.regatta, [RegattaOptions localOptions])
       : this.localOptions =
             localOptions == null ? regatta.options : localOptions;
@@ -28,14 +28,20 @@ class RegattaMap extends StatefulWidget {
 }
 
 class _RegattaMapState extends State<RegattaMap> {
+  double _courseOrientation = 0;
+  final proj4.ProjectionTuple projTuple = new proj4.ProjectionTuple(
+      fromProj: proj4.Projection.WGS84, toProj: proj4.Projection.GOOGLE);
+
   LocationData _currentLocation;
 
-  bool _liveUpdate = false;
+  bool _liveUpdate = true;
   bool _permission = false;
+  bool _northAlignment = false;
 
   String _serviceError = '';
+  StreamSubscription _locationStream;
 
-  var interActiveFlags = InteractiveFlag.all;
+  var interActiveFlags = InteractiveFlag.all & ~InteractiveFlag.rotate;
 
   final Location _locationService = Location();
 
@@ -65,7 +71,7 @@ class _RegattaMapState extends State<RegattaMap> {
         if (_permission) {
           location = await _locationService.getLocation();
           _currentLocation = location;
-          _locationService.onLocationChanged
+          _locationStream = _locationService.onLocationChanged
               .listen((LocationData result) async {
             if (mounted) {
               setState(() {
@@ -76,7 +82,7 @@ class _RegattaMapState extends State<RegattaMap> {
                   widget.mapController.move(
                       LatLng(_currentLocation.latitude,
                           _currentLocation.longitude),
-                      widget.mapController.zoom);
+                      17);
                 }
               });
             }
@@ -100,18 +106,31 @@ class _RegattaMapState extends State<RegattaMap> {
     }
   }
 
+  void stopGps() {
+    _locationStream.pause();
+  }
+
+  void continueGps() {
+    _locationStream.resume();
+  }
+
   @override
   Widget build(BuildContext context) {
     LatLng currentLatLng;
+    double heading;
 
-    // Until currentLocation is initially updated, Widget can locate to 0, 0
-    // by default or store previous location value to show.
     if (_currentLocation != null) {
       currentLatLng =
           LatLng(_currentLocation.latitude, _currentLocation.longitude);
+      heading = _currentLocation.heading * (pi / 180);
     } else {
-      currentLatLng =
-          widget.regatta.options.center; //widget.regatta.topmark.toLatLng();
+      currentLatLng = widget.regatta.options.center;
+      heading = 0;
+    }
+
+    this._courseOrientation = _getCourseOrientation();
+    if (_northAlignment) {
+      widget.mapController.rotate(this._courseOrientation);
     }
 
     Polyline mapLineS;
@@ -123,11 +142,22 @@ class _RegattaMapState extends State<RegattaMap> {
     List<CircleMarker> mapCircles = [];
     List<Polyline> mapLines = [];
 
-    mapCircles.add(new CircleMarker(
-        radius: 5,
-        useRadiusInMeter: true,
-        color: Colors.deepPurple,
-        point: currentLatLng));
+    var markers = <Marker>[
+      Marker(
+          width: 80,
+          height: 80,
+          point: currentLatLng,
+          builder: (ctx) => Container(
+                child: Transform.rotate(
+                    angle: heading,
+                    child: Icon(
+                      Icons.navigation,
+                      color: Colors.deepPurple,
+                      size: 30,
+                    )),
+              ),
+          anchorPos: AnchorPos.align(AnchorAlign.center))
+    ];
 
     // Map features for Startingline
     mapLineS = new Polyline(
@@ -159,9 +189,9 @@ class _RegattaMapState extends State<RegattaMap> {
         widget.regatta.startingline.isActualLine()) {
       mapLineSCenter = new Polyline(
           points: widget.regatta.startingline
-              .transformProjection(widget.projTuple)
+              .transformProjection(this.projTuple)
               .getOrthogonalLine(widget.localOptions.centerlineLength)
-              .transformProjection(widget.projTuple, inverse: true)
+              .transformProjection(this.projTuple, inverse: true)
               .toLatLng(),
           strokeWidth: 3,
           color: widget.slColor,
@@ -200,9 +230,9 @@ class _RegattaMapState extends State<RegattaMap> {
         widget.regatta.gate.isActualLine()) {
       mapLineGCenter = new Polyline(
           points: widget.regatta.gate
-              .transformProjection(widget.projTuple)
+              .transformProjection(this.projTuple)
               .getOrthogonalLine(widget.localOptions.centerlineLength)
-              .transformProjection(widget.projTuple, inverse: true)
+              .transformProjection(this.projTuple, inverse: true)
               .toLatLng(),
           strokeWidth: 2,
           color: widget.gateColor,
@@ -251,11 +281,65 @@ class _RegattaMapState extends State<RegattaMap> {
           // MarkerLayerOptions(markers: mapMarker),
           PolylineLayerOptions(polylines: mapLines),
           CircleLayerOptions(circles: mapCircles),
+          MarkerLayerOptions(markers: markers),
         ],
       ),
-      Padding(padding: EdgeInsets.only(left: 5), child: _gpsButton()),
-      Center(child: Icon(Icons.add)),
+      Row(
+        children: [
+          Padding(padding: EdgeInsets.only(left: 5), child: _gpsButton()),
+          Padding(padding: EdgeInsets.only(left: 5), child: _rotationButton()),
+        ],
+      ),
+      _center()
     ]));
+  }
+
+  Widget _rotationButton() {
+    bool _disabled = !(widget.regatta.startingline.isComplete() &&
+        widget.regatta.topmark != null);
+
+    if (_northAlignment) {
+      return ElevatedButton.icon(
+        icon: Icon(Icons.navigation_outlined),
+        label: Text("Align to North"),
+        onPressed: () {
+          widget.mapController.rotate(0);
+          setState(() => _northAlignment = !_northAlignment);
+        },
+      );
+    } else {
+      return ElevatedButton.icon(
+        icon: Icon(Icons.near_me_outlined),
+        label: Text("Align to Course"),
+        onPressed: _disabled
+            ? null
+            : () {
+                widget.mapController.rotate(this._courseOrientation);
+                setState(() => _northAlignment = !_northAlignment);
+              },
+      );
+    }
+  }
+
+  double _getCourseOrientation() {
+    if (widget.regatta.startingline.isComplete() &&
+        widget.regatta.topmark != null) {
+      var sLine =
+          widget.regatta.startingline.transformProjection(this.projTuple);
+      Vector sLineVec = new Vector(sLine.p1, sLine.p2);
+      Vector orthoLine = sLineVec.getOrthogonalVector();
+      bool isPointRightToLine = sLineVec.compareToPoint(
+              widget.regatta.topmark.transformProjection(this.projTuple)) >
+          0;
+
+      Vector north = new Vector(MyPoint(0, 0), MyPoint(0, 1));
+      var angle = north.getAngleToVector(orthoLine);
+
+      if (isPointRightToLine) angle += 180;
+
+      return angle;
+    } else
+      return 0;
   }
 
   Widget _gpsButton() {
@@ -263,7 +347,7 @@ class _RegattaMapState extends State<RegattaMap> {
       return ElevatedButton.icon(
           icon: Icon(Icons.gps_fixed),
           onPressed: _toggleGpsPosition,
-          label: Text("Unfix position \n from GPS"));
+          label: Text("Unfix position\nfrom GPS"));
     } else {
       return ElevatedButton.icon(
           icon: Icon(Icons.gps_not_fixed),
@@ -272,21 +356,32 @@ class _RegattaMapState extends State<RegattaMap> {
     }
   }
 
+  Widget _center() {
+    if (_liveUpdate) {
+      return Center();
+    } else {
+      return Center(child: Icon(Icons.add));
+    }
+  }
 
   void _toggleGpsPosition() {
     setState(() {
       _liveUpdate = !_liveUpdate;
+      continueGps();
 
       if (_liveUpdate) {
-        interActiveFlags = InteractiveFlag.rotate |
-            InteractiveFlag.pinchZoom |
-            InteractiveFlag.doubleTapZoom;
+        interActiveFlags =
+            InteractiveFlag.pinchZoom | InteractiveFlag.doubleTapZoom;
+
+        widget.mapController.move(
+            LatLng(_currentLocation.latitude, _currentLocation.longitude), 17);
 
         Scaffold.of(context).showSnackBar(SnackBar(
           content:
               Text('In live update mode only zoom and rotation are enable'),
         ));
       } else {
+        stopGps();
         interActiveFlags = InteractiveFlag.all;
         Scaffold.of(context).showSnackBar(SnackBar(
           content: Text('Live update deactivated'),

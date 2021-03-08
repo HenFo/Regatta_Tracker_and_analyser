@@ -1,4 +1,4 @@
-import "dart:math";
+import "dart:math" as math;
 import 'package:flutter_map/flutter_map.dart';
 import "package:latlong/latlong.dart";
 import "package:proj4dart/proj4dart.dart";
@@ -75,7 +75,8 @@ class MyPoint extends Point {
   }
 
   double getEuclideanDistanceToPoint(MyPoint otherPoint) {
-    return sqrt(pow(otherPoint.x - this.x, 2) + pow(otherPoint.y - this.y, 2));
+    return math.sqrt(math.pow(otherPoint.x - this.x, 2) +
+        math.pow(otherPoint.y - this.y, 2));
   }
 
   double getGreatCircleDistanceToPoint(MyPoint otherPoint) {
@@ -99,7 +100,7 @@ class Vector {
     var dx = end.x - start.x;
     var dy = end.y - start.y;
 
-    var normFactor = 1 / (sqrt(pow(dx, 2) + pow(dy, 2)));
+    var normFactor = 1 / (math.sqrt(math.pow(dx, 2) + math.pow(dy, 2)));
     dx = normFactor * dx;
     dy = normFactor * dy;
 
@@ -123,25 +124,55 @@ class Vector {
     return new Vector(hStart, hDir);
   }
 
-  double getDistanceToPoint(MyPoint p) {
+  double getDistanceToPoint(MyPoint p, {bool onlyPositiveValue = true}) {
     Vector orthoVector = getOrthogonalVector();
     orthoVector.setStart(p);
 
-    var denominator = start.x +
-        ((start.x - orthoVector.start.x) / normDirection.x) * normDirection.y -
-        orthoVector.start.y;
+    var a = this.start.x;
+    var b = this.start.y;
+    var c = this.normDirection.x;
+    var d = this.normDirection.y;
+    var e = orthoVector.start.x;
+    var f = orthoVector.start.y;
+    var g = orthoVector.normDirection.x;
+    var h = orthoVector.normDirection.y;
 
-    var numerator = orthoVector.normDirection.y -
-        ((orthoVector.normDirection.x * normDirection.y) / normDirection.x);
+    // var denominator = start.x +
+    //     ((start.x - orthoVector.start.x) / normDirection.x) * normDirection.y -
+    //     orthoVector.start.y;
+
+    // var numerator = orthoVector.normDirection.y -
+    //     ((orthoVector.normDirection.x * normDirection.y) / normDirection.x);
+
+    var denominator = -b * c - e * d + a * d + f * c;
+    var numerator = g * d - h * c;
 
     var scalar = denominator / numerator;
 
-    return scalar.abs();
+    if (onlyPositiveValue)
+      return scalar.abs();
+    else
+      return scalar;
+  }
 
-    // Point intersect = orthoVector.getPointOnLine(scalar);
-    // Line connection = new Line(p, intersect);
+  double getAngleToVector(Vector otherVector) {
+    var angle =
+        math.atan2(otherVector.normDirection.y, otherVector.normDirection.x) -
+            math.atan2(this.normDirection.y, this.normDirection.x);
+    return angle * (180 / math.pi);
+  }
 
-    // return connection.getDistance();
+  /// Returns -1 if point is to the left of this vector
+  /// Returns 0 if point is in this vector
+  /// Returns 1 if point is to the right of this vector
+  int compareToPoint(MyPoint point) {
+    Vector v = new Vector(this.start, point);
+    var angle = this.getAngleToVector(v);
+    if (angle > 0) return -1;
+    if (angle < 0)
+      return 1;
+    else
+      return 0;
   }
 }
 
