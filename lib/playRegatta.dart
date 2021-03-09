@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/drawerOptions.dart';
 import 'package:flutter_map/flutter_map.dart';
 import "package:latlong/latlong.dart";
+import 'informationWidget.dart';
 import 'map.dart';
 import 'regatta.dart';
 
@@ -33,14 +34,17 @@ class _PlayRegattaState extends State<PlayRegatta> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text("Create your course"),
+          title: Text("Race"),
           // actions: <Widget>[_optionsMenu()],
         ),
         endDrawer: Drawer(
           child: DrawerOptions(localOptions, setOptions),
         ),
         body: Column(
-          children: <Widget>[RegattaMap(this.mapController, widget.regatta, localOptions)],
+          children: <Widget>[
+            RegattaMap(this.mapController, widget.regatta, this.localOptions),
+            Informations()
+          ],
         ));
   }
 }

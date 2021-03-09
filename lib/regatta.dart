@@ -38,23 +38,26 @@ class RegattaOptions {
   bool visibilitySlCenterline = true;
   bool visibilityGateCenterline = false;
   LatLng center = new LatLng(51.956074, 7.614565);
-  // int zoomLevel = 17;
-  // LatLngBounds bbox = new LatLngBounds(
-  //     LatLng(51.958333, 7.611466), LatLng(51.954324, 7.618302));
 
   RegattaOptions clone() {
     var options = new RegattaOptions();
-    // options.bbox = this.bbox;
     options.centerlineLength = this.centerlineLength;
     options.gateRadius = this.gateRadius;
     options.startinglineRadius = this.startinglineRadius;
     options.visibilityGateCenterline = this.visibilityGateCenterline;
     options.visibilitySlCenterline = this.visibilitySlCenterline;
     options.center = this.center;
-    // options.zoomLevel = this.zoomLevel;
 
     return options;
   }
+}
+
+class RegattaInformation {
+  final String title;
+  final String subtitle;
+  final String information;
+
+  RegattaInformation(this.title, this.subtitle, this.information);
 }
 
 class MyPoint extends Point {

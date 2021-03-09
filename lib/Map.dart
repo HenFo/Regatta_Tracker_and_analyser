@@ -34,7 +34,7 @@ class _RegattaMapState extends State<RegattaMap> {
 
   LocationData _currentLocation;
 
-  bool _liveUpdate = true;
+  bool _liveUpdate = false;
   bool _permission = false;
   bool _northAlignment = false;
 
@@ -49,6 +49,13 @@ class _RegattaMapState extends State<RegattaMap> {
   void initState() {
     super.initState();
     initLocationService();
+  }
+
+  @override
+  void dispose() {
+    dev.log("disposed", name: "dispose");
+    _locationStream.cancel();
+    super.dispose();
   }
 
   void initLocationService() async {

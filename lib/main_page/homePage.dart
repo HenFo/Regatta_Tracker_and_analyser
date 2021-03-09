@@ -11,12 +11,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Regatta> regattas = [
-    // new Regatta("test1"),
-    // new Regatta("test2"),
-    // new Regatta("test3"),
-    // new Regatta("test4")
-  ];
+  List<Regatta> regattas = [];
 
   void newRegatta(Regatta regatta) {
     dev.log("Save to List", name: "HomePage");
