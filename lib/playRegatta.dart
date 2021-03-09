@@ -40,11 +40,12 @@ class _PlayRegattaState extends State<PlayRegatta> {
         endDrawer: Drawer(
           child: DrawerOptions(localOptions, setOptions),
         ),
-        body: Column(
-          children: <Widget>[
+        body: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+          return Column(children: <Widget>[
             RegattaMap(this.mapController, widget.regatta, this.localOptions),
-            Informations()
-          ],
-        ));
+            Informations(constraints)
+          ]);
+        }));
   }
 }
