@@ -1,29 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/informationList.dart';
-import 'package:flutter_application_1/regatta.dart';
+import 'package:flutter_application_1/helperClasses.dart';
 import "dart:developer" as dev;
+import "regattaDatabase.dart";
+
+
+import 'package:location/location.dart';
+
+import 'timerControll.dart';
 
 class Informations extends StatefulWidget {
   final BoxConstraints constraints;
-  Informations(this.constraints);
+  final LocationData? locationData;
+
+  final Function onRaceStartCallback;
+  final Function onTickCallback;
+  final Function onRaceStopCallback;
+
+  Informations(this.constraints, this.locationData, this.onRaceStartCallback,
+      this.onTickCallback, this.onRaceStopCallback);
 
   @override
   _InformationsState createState() => _InformationsState();
 }
 
 class _InformationsState extends State<Informations> {
-  List<RegattaInformation> list = [
-    new RegattaInformation("test", "test2", "value"),
-    new RegattaInformation("test", "test2", "value"),
-    new RegattaInformation("test", "test2", "value"),
-  ];
+  List<RegattaInformation> list = [];
 
   final double _minHeight = 0;
   final double _handleHeigth = 25;
   final double _velocityThreshold = 10;
 
-  double _maxHeight;
-  double _informationHeight;
+  late double _maxHeight;
+  late double _informationHeight;
   Offset _offset = Offset.zero;
 
   @override
@@ -42,16 +51,22 @@ class _InformationsState extends State<Informations> {
       if (height > _maxHeight) {
         height = _maxHeight;
       }
-
-      // dev.log(height.toString());
-
       _informationHeight = height;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // _maxHeight = MediaQuery.of(context).size.height;
+    if (widget.locationData != null) {
+      list = <RegattaInformation>[
+        new RegattaInformation("Speed", "max: ",
+            "${(widget.locationData!.speed * 100).roundToDouble() / 100} ± ${(widget.locationData!.speedAccuracy * 100).roundToDouble() / 100} m/s"),
+      ];
+    } else {
+      list = <RegattaInformation>[
+        new RegattaInformation("Speed", "max: ", "0.0 ± 0.0 m/s"),
+      ];
+    }
 
     return Column(children: [
       GestureDetector(
@@ -71,14 +86,15 @@ class _InformationsState extends State<Informations> {
             }
             setHeight();
           },
+          onDoubleTap: () {},
           onVerticalDragEnd: (details) {
-            if (details.primaryVelocity < -_velocityThreshold) {
+            if (details.primaryVelocity! < -_velocityThreshold) {
               if (_informationHeight > _maxHeight / 2) {
                 _offset = Offset(0, _maxHeight);
               } else {
                 _offset = Offset(0, _maxHeight / 2);
               }
-            } else if (details.primaryVelocity > _velocityThreshold) {
+            } else if (details.primaryVelocity! > _velocityThreshold) {
               _offset = Offset.zero;
             }
             setHeight();
@@ -94,7 +110,15 @@ class _InformationsState extends State<Informations> {
                             : Icons.expand_more,
                         color: Colors.white)))
           ])),
-      Container(height: _informationHeight, child: InformationList(list))
+      Container(
+          height: _informationHeight,
+          child: Column(
+            children: <Widget>[
+              TimerControllPanel(widget.onRaceStartCallback,
+                  widget.onTickCallback, widget.onRaceStopCallback),
+              Expanded(child: InformationList(list))
+            ],
+          ))
     ]);
   }
 }

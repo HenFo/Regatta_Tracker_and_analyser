@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:proj4dart/proj4dart.dart' as proj4;
-import '../drawerOptions.dart';
+import '../raceSettings.dart';
 import 'editButtons.dart';
-import "../regatta.dart";
+import '../helperClasses.dart';
+import "../regattaDatabase.dart";
 import "package:flutter_map/flutter_map.dart";
 import "package:latlong/latlong.dart";
 import "dart:developer" as dev;
@@ -11,9 +12,9 @@ import "../Map.dart";
 class CreateRegatta extends StatefulWidget {
   final String name;
   final int id;
-  final Function saveCallback;
-  final Function editCallback;
-  final Regatta editRegatta;
+  final Function? saveCallback;
+  final Function? editCallback;
+  final Regatta? editRegatta;
 
   CreateRegatta(this.id, this.name,
       [this.saveCallback, this.editRegatta, this.editCallback]);
@@ -24,16 +25,16 @@ class CreateRegatta extends StatefulWidget {
 
 class _CreateRegattaState extends State<CreateRegatta> {
   //Option variables:
-  Regatta regatta;
-  RegattaOptions localOptions;
+  late Regatta regatta;
+  late RegattaOptions localOptions;
 
-  MapController mapController;
+  late MapController mapController;
 
-  MyPoint gateStart;
-  MyPoint gateEnd;
+  MyPoint? gateStart;
+  MyPoint? gateEnd;
 
-  MyPoint slStart;
-  MyPoint slEnd;
+  MyPoint? slStart;
+  MyPoint? slEnd;
 
   @override
   void initState() {
@@ -42,10 +43,10 @@ class _CreateRegattaState extends State<CreateRegatta> {
     regatta = new Regatta(widget.id, widget.name);
 
     if (widget.editRegatta != null) {
-      regatta.topmark = widget.editRegatta.topmark;
-      regatta.startingline = widget.editRegatta.startingline;
-      regatta.gate = widget.editRegatta.gate;
-      regatta.options = widget.editRegatta.options;
+      regatta.topmark = widget.editRegatta!.topmark;
+      regatta.startingline = widget.editRegatta!.startingline;
+      regatta.gate = widget.editRegatta!.gate;
+      regatta.options = widget.editRegatta!.options;
 
       gateStart = regatta.gate.p1;
       gateEnd = regatta.gate.p2;
@@ -67,20 +68,21 @@ class _CreateRegattaState extends State<CreateRegatta> {
         // var bounds = regatta.calculateBbox();
         var proj = proj4.ProjectionTuple(
             fromProj: proj4.Projection.WGS84, toProj: proj4.Projection.GOOGLE);
+
         localOptions.center = regatta.startingline
             .transformProjection(proj)
-            .getCenter()
+            .getCenter()!
             .transformProjection(proj, inverse: true)
             .toLatLng();
         regatta.options = localOptions;
 
         if (widget.editCallback != null) {
-          widget.editCallback(regatta);
+          widget.editCallback!(regatta);
         } else if (widget.saveCallback != null) {
-          widget.saveCallback(regatta);
+          widget.saveCallback!(regatta);
         }
 
-        // Navigator.pop(context);
+        Navigator.pop(context);
         return true;
       } catch (e) {
         dev.log(e.toString());
@@ -94,14 +96,21 @@ class _CreateRegattaState extends State<CreateRegatta> {
     return Scaffold(
         appBar: AppBar(
           title: Text("Create your course"),
-          // actions: <Widget>[_optionsMenu()],
-        ),
-        endDrawer: Drawer(
-          child: DrawerOptions(localOptions, this.setRegattaOptions),
+          actions: <Widget>[
+            IconButton(
+                icon: Icon(Icons.settings),
+                onPressed: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => RaceSettings(localOptions,
+                              widget.name, this.setRegattaOptions)));
+                })
+          ],
         ),
         body: Column(
           children: <Widget>[
-            RegattaMap(mapController, regatta, localOptions),
+            RegattaMap(mapController, regatta, localOptions: localOptions),
             EditButtons(mapController, _addToMap, _save)
           ],
         ));

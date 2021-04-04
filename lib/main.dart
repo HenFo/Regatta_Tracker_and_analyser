@@ -1,5 +1,6 @@
+// @dart=2.9
 import 'package:flutter/material.dart';
-import 'createing_and_editing_regatta/createRegatta.dart';
+// import 'createing_and_editing_regatta/createRegatta.dart';
 import "main_page/homePage.dart";
 
 void main() {
@@ -7,7 +8,6 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

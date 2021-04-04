@@ -1,64 +1,11 @@
 import "dart:math" as math;
 import 'package:flutter_map/flutter_map.dart';
 import "package:latlong/latlong.dart";
+import 'package:location/location.dart';
 import "package:proj4dart/proj4dart.dart";
+import "package:sqflite/sqflite.dart";
+import "package:path_provider/path_provider.dart";
 
-class Regatta {
-  final int id;
-  final String name;
-
-  Topmark topmark;
-  Startingline startingline = new Startingline(null, null);
-  Gate gate = new Gate(null, null);
-  double gateRadius;
-  String location = "Earth";
-
-  RegattaOptions options = new RegattaOptions();
-
-  Regatta(this.id, this.name);
-
-  LatLngBounds calculateBbox() {
-    var points = <LatLng>[];
-    if (topmark != null) {
-      points.add(topmark.toLatLng());
-    }
-
-    points.addAll(startingline.toLatLng());
-    points.addAll(gate.toLatLng());
-
-    var bounds = LatLngBounds.fromPoints(points);
-    return bounds;
-  }
-}
-
-class RegattaOptions {
-  double gateRadius = 7;
-  double startinglineRadius = 3;
-  double centerlineLength = 300.0;
-  bool visibilitySlCenterline = true;
-  bool visibilityGateCenterline = false;
-  LatLng center = new LatLng(51.956074, 7.614565);
-
-  RegattaOptions clone() {
-    var options = new RegattaOptions();
-    options.centerlineLength = this.centerlineLength;
-    options.gateRadius = this.gateRadius;
-    options.startinglineRadius = this.startinglineRadius;
-    options.visibilityGateCenterline = this.visibilityGateCenterline;
-    options.visibilitySlCenterline = this.visibilitySlCenterline;
-    options.center = this.center;
-
-    return options;
-  }
-}
-
-class RegattaInformation {
-  final String title;
-  final String subtitle;
-  final String information;
-
-  RegattaInformation(this.title, this.subtitle, this.information);
-}
 
 class MyPoint extends Point {
   final double x;
@@ -66,8 +13,10 @@ class MyPoint extends Point {
 
   MyPoint(this.x, this.y);
 
-  bool equals(MyPoint otherPoint) {
-    return (this.x == otherPoint.x) && (this.y == otherPoint.y);
+  bool equals(MyPoint? otherPoint) {
+    if (otherPoint != null)
+      return (this.x == otherPoint.x) && (this.y == otherPoint.y);
+    return false;
   }
 
   MyPoint transformProjection(ProjectionTuple projTuple,
@@ -87,7 +36,7 @@ class MyPoint extends Point {
     var p2 = otherPoint.toLatLng();
     var distance = Distance(calculator: Haversine());
 
-    return distance.as(LengthUnit.Meter, p1, p2);
+    return distance.as(LengthUnit.Meter, p1, p2) as double;
   }
 
   LatLng toLatLng() {
@@ -97,7 +46,7 @@ class MyPoint extends Point {
 
 class Vector {
   MyPoint start;
-  MyPoint normDirection;
+  late MyPoint normDirection;
 
   Vector(this.start, MyPoint end) {
     var dx = end.x - start.x;
@@ -180,38 +129,47 @@ class Vector {
 }
 
 class Line {
-  MyPoint p1;
-  MyPoint p2;
+  MyPoint? p1;
+  MyPoint? p2;
 
   Line(this.p1, this.p2);
 
   bool equals(Line otherLine) {
-    var a = this.p1.equals(otherLine.p1);
-    var a2 = this.p1.equals(otherLine.p2);
-    var b = this.p2.equals(otherLine.p2);
-    var b2 = this.p2.equals(otherLine.p1);
+    if (this.isComplete() && otherLine.isComplete()) {
+      var a = this.p1!.equals(otherLine.p1!);
+      var a2 = this.p1!.equals(otherLine.p2!);
+      var b = this.p2!.equals(otherLine.p2!);
+      var b2 = this.p2!.equals(otherLine.p1!);
 
-    return (a && b) || (a2 && b2);
+      return (a && b) || (a2 && b2);
+    }
+    return false;
   }
 
   bool isActualLine() {
-    return !this.p1.equals(this.p2);
+    return !(this.p1?.equals(this.p2) ?? false);
   }
 
   Line transformProjection(ProjectionTuple projTuple, {bool inverse = false}) {
-    var p1T = p1.transformProjection(projTuple, inverse: inverse);
-    var p2T = p2.transformProjection(projTuple, inverse: inverse);
+    if (this.isComplete()) {
+      var p1T = p1!.transformProjection(projTuple, inverse: inverse);
+      var p2T = p2!.transformProjection(projTuple, inverse: inverse);
 
-    return new Line(p1T, p2T);
+      return new Line(p1T, p2T);
+    }
+    return new Line(null, null);
   }
 
   bool isComplete() {
     return (p1 != null && p2 != null);
   }
 
-  MyPoint getCenter() {
-    Vector v = new Vector(p1, p2);
-    return v.getPointOnLine(this.getEuclideanDistance() / 2);
+  MyPoint? getCenter() {
+    if (this.isComplete()) {
+      Vector v = new Vector(p1!, p2!);
+      return v.getPointOnLine(this.getEuclideanDistance() / 2);
+    }
+    return null;
   }
 
   Line getOrthogonalLine(
@@ -221,7 +179,7 @@ class Line {
     bool symetric = true,
   }) {
     if (isComplete()) {
-      Vector lineAsVector = new Vector(p1, p2);
+      Vector lineAsVector = new Vector(p1!, p2!);
       Vector orthoVector = lineAsVector.getOrthogonalVector();
       MyPoint startOfOrtho = centered
           ? lineAsVector.getPointOnLine(getEuclideanDistance() / 2)
@@ -246,7 +204,7 @@ class Line {
 
   double getEuclideanDistance() {
     if (isComplete()) {
-      return p1.getEuclideanDistanceToPoint(p2);
+      return p1!.getEuclideanDistanceToPoint(p2!);
     }
 
     return 0;
@@ -254,7 +212,7 @@ class Line {
 
   double getGreatCircleDistance() {
     if (isComplete()) {
-      return p1.getGreatCircleDistanceToPoint(p2);
+      return p1!.getGreatCircleDistanceToPoint(p2!);
     }
     return 0;
   }
@@ -262,10 +220,10 @@ class Line {
   List<LatLng> toLatLng() {
     var ret = <LatLng>[];
     if (p1 != null) {
-      ret.add(p1.toLatLng());
+      ret.add(p1!.toLatLng());
     }
     if (p2 != null) {
-      ret.add(p2.toLatLng());
+      ret.add(p2!.toLatLng());
     }
 
     return ret;
@@ -273,12 +231,12 @@ class Line {
 }
 
 class Startingline extends Line {
-  Startingline(MyPoint p1, MyPoint p2) : super(p1, p2);
+  Startingline(MyPoint? p1, MyPoint? p2) : super(p1, p2);
 }
 
 class Gate extends Line {
   double radius;
-  Gate(MyPoint p1, MyPoint p2, {this.radius = 0}) : super(p1, p2);
+  Gate(MyPoint? p1, MyPoint? p2, {this.radius = 0}) : super(p1, p2);
 }
 
 class Topmark extends MyPoint {

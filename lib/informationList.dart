@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'regatta.dart';
+import 'helperClasses.dart';
+import "regattaDatabase.dart";
+
 
 class InformationList extends StatefulWidget {
   final List<RegattaInformation> listItems;

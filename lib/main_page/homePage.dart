@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../playRegatta.dart';
 import 'mainList.dart';
-import "../regatta.dart";
+import '../helperClasses.dart';
+import "../regattaDatabase.dart";
 import "../createing_and_editing_regatta/createRegatta.dart";
 import "dart:developer" as dev;
 
@@ -12,6 +13,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Regatta> regattas = [];
+  Boat boat = Boat("OranJeton");
 
   void newRegatta(Regatta regatta) {
     dev.log("Save to List", name: "HomePage");
@@ -24,12 +26,12 @@ class _HomePageState extends State<HomePage> {
     Navigator.push(
         context,
         MaterialPageRoute(
-            builder: (context) => CreateRegatta(regatta.id, regatta.name, null,
-                regatta, this.updateRegattaInList)));
+            builder: (context) => CreateRegatta(regatta.localListID,
+                regatta.name, null, regatta, this.updateRegattaInList)));
   }
 
   void updateRegattaInList(Regatta regatta) {
-    setState(() => regattas[regatta.id] = regatta);
+    setState(() => regattas[regatta.localListID] = regatta);
   }
 
   void playRegatta(int indexOfRegatta) {
@@ -39,7 +41,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   TextEditingController _regattaNameController = TextEditingController();
-  String newName;
+  late String newName;
 
   Future<void> _displayRegattaNameInputDialog(BuildContext context) async {
     return showDialog(
@@ -90,9 +92,17 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    Widget body;
+    if (regattas.isEmpty) {
+      body = Center(
+        child: Text("Add a new Regatta"),
+      );
+    } else {
+      body = MainList(this.regattas, this.editRegatta, this.playRegatta);
+    }
     return Scaffold(
         appBar: AppBar(title: Text("Your regatta courses")),
-        body: MainList(this.regattas, this.editRegatta, this.playRegatta),
+        body: body,
         floatingActionButton: FloatingActionButton(
             child: Icon(Icons.add),
             backgroundColor: Colors.amber,
