@@ -1,11 +1,7 @@
 import "dart:math" as math;
-import 'package:flutter_map/flutter_map.dart';
 import "package:latlong/latlong.dart";
 import 'package:location/location.dart';
 import "package:proj4dart/proj4dart.dart";
-import "package:sqflite/sqflite.dart";
-import "package:path_provider/path_provider.dart";
-
 
 class MyPoint extends Point {
   final double x;
@@ -41,6 +37,12 @@ class MyPoint extends Point {
 
   LatLng toLatLng() {
     return new LatLng(y, x);
+  }
+
+  /// "Lat,Lng" <=> "y,x"
+  @override
+  String toString() {
+    return "$y,$x";
   }
 }
 
@@ -88,13 +90,6 @@ class Vector {
     var f = orthoVector.start.y;
     var g = orthoVector.normDirection.x;
     var h = orthoVector.normDirection.y;
-
-    // var denominator = start.x +
-    //     ((start.x - orthoVector.start.x) / normDirection.x) * normDirection.y -
-    //     orthoVector.start.y;
-
-    // var numerator = orthoVector.normDirection.y -
-    //     ((orthoVector.normDirection.x * normDirection.y) / normDirection.x);
 
     var denominator = -b * c - e * d + a * d + f * c;
     var numerator = g * d - h * c;
@@ -228,17 +223,47 @@ class Line {
 
     return ret;
   }
+
+  /// "p1.y,p1.x;p2.y,p2.x"
+  @override
+  String toString() {
+    return "${p1.toString()};${p2.toString()}";
+  }
 }
 
 class Startingline extends Line {
   Startingline(MyPoint? p1, MyPoint? p2) : super(p1, p2);
+  factory Startingline.fromText(String text) {
+    var pointSplit = text.split(";");
+    var points = <MyPoint>[];
+    pointSplit.forEach((element) {
+      var corSplit = element.split(",");
+      points.add(MyPoint(double.parse(corSplit[1]), double.parse(corSplit[0])));
+    });
+
+    return Startingline(points[0], points[1]);
+  }
 }
 
 class Gate extends Line {
   double radius;
   Gate(MyPoint? p1, MyPoint? p2, {this.radius = 0}) : super(p1, p2);
+  factory Gate.fromText(String text, {double radius = 0}) {
+    var pointSplit = text.split(";");
+    var points = <MyPoint>[];
+    pointSplit.forEach((element) {
+      var corSplit = element.split(",");
+      points.add(MyPoint(double.parse(corSplit[1]), double.parse(corSplit[0])));
+    });
+
+    return Gate(points[0], points[1], radius: radius);
+  }
 }
 
 class Topmark extends MyPoint {
   Topmark(double x, double y) : super(x, y);
+  factory Topmark.fromText(String text) {
+    var tmSplit = text.split(",");
+    return Topmark(double.parse(tmSplit[1]), double.parse(tmSplit[0]));
+  }
 }

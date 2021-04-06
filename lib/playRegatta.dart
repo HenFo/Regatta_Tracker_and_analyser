@@ -11,8 +11,9 @@ import "dart:developer" as dev;
 
 class PlayRegatta extends StatefulWidget {
   final Regatta regatta;
+  final Boat boat;
 
-  PlayRegatta(this.regatta);
+  PlayRegatta(this.regatta, this.boat);
 
   @override
   _PlayRegattaState createState() => _PlayRegattaState();
@@ -21,15 +22,22 @@ class PlayRegatta extends StatefulWidget {
 class _PlayRegattaState extends State<PlayRegatta> {
   late MapController mapController;
   late RegattaOptions localOptions;
+  DatabaseHelper dbHelper = DatabaseHelper();
   LocationData? locationData;
+  late int round;
 
-  final List trackingData = <Trackingdata>[];
+  final List<Trackingdata> trackingData = [];
 
   @override
   void initState() {
     super.initState();
     this.mapController = new MapController();
     this.localOptions = widget.regatta.options.clone();
+    _getRoundsCount();
+  }
+
+  void _getRoundsCount() async {
+    round = await dbHelper.getNumberRounds(widget.regatta.id!);
   }
 
   void setOptions(RegattaOptions newOptions) {
@@ -53,6 +61,11 @@ class _PlayRegattaState extends State<PlayRegatta> {
 
   void onRaceStop() {
     dev.log("onRaceStop", name: "stop");
+    Track track =
+        Track(widget.regatta.id!, round, widget.boat.boatID!, trackingData);
+    dbHelper.insertTrack(track);
+    trackingData.clear();
+    round++;
   }
 
   @override

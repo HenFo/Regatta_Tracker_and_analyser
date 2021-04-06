@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../playRegatta.dart';
 import 'mainList.dart';
-import '../helperClasses.dart';
 import "../regattaDatabase.dart";
 import "../createing_and_editing_regatta/createRegatta.dart";
 import "dart:developer" as dev;
@@ -12,11 +11,23 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Regatta> regattas = [];
-  Boat boat = Boat("OranJeton");
+  final DatabaseHelper dbHelper = DatabaseHelper();
+  final List<Regatta> regattas = [];
+  final Boat boat = Boat("OranJeton");
+
+  @override
+  void initState() {
+    super.initState();
+    initList();
+  }
+
+  void initList() async {
+    dbHelper.getAllRegattas().then((value) => setState(() => regattas.addAll(value)));
+  }
 
   void newRegatta(Regatta regatta) {
     dev.log("Save to List", name: "HomePage");
+    dbHelper.insertRegatta(regatta);
     setState(() => regattas.add(regatta));
   }
 
@@ -31,13 +42,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   void updateRegattaInList(Regatta regatta) {
+    dbHelper.updateRegatta(regatta);
     setState(() => regattas[regatta.localListID] = regatta);
   }
 
   void playRegatta(int indexOfRegatta) {
     var regatta = regattas[indexOfRegatta];
     Navigator.push(
-        context, MaterialPageRoute(builder: (context) => PlayRegatta(regatta)));
+        context, MaterialPageRoute(builder: (context) => PlayRegatta(regatta, boat)));
   }
 
   TextEditingController _regattaNameController = TextEditingController();

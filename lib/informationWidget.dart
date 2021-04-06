@@ -4,7 +4,6 @@ import 'package:flutter_application_1/helperClasses.dart';
 import "dart:developer" as dev;
 import "regattaDatabase.dart";
 
-
 import 'package:location/location.dart';
 
 import 'timerControll.dart';
@@ -33,13 +32,16 @@ class _InformationsState extends State<Informations> {
 
   late double _maxHeight;
   late double _informationHeight;
-  Offset _offset = Offset.zero;
+  late Offset _offset;
 
   @override
   void initState() {
     super.initState();
-    _informationHeight = _minHeight;
     _maxHeight = widget.constraints.maxHeight - _handleHeigth;
+    // _informationHeight = _maxHeight / 2;
+    // _offset = Offset(0, _maxHeight / 2);
+    _informationHeight = _minHeight;
+    _offset = Offset.zero;
   }
 
   void setHeight() {
