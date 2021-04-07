@@ -14,16 +14,22 @@ import "dart:math";
 class RegattaMap extends StatefulWidget {
   final MapController mapController;
   final Regatta regatta;
-  final RegattaOptions localOptions;
+  late final RegattaOptions localOptions;
   final Function? gpsInformationCallback;
+  final List<Trackingdata> trailingLine;
 
   final Color slColor = Colors.amber;
   final Color gateColor = Colors.lightGreen;
   final Color tmColor = Colors.blueGrey;
+  // final Color boatColor = Color.fromRGBO(
+  //     Random().nextInt(256), Random().nextInt(256), Random().nextInt(256), 1);
+  final Color boatColor = Colors.deepPurple;
 
   RegattaMap(this.mapController, this.regatta,
-      {RegattaOptions? localOptions, this.gpsInformationCallback})
-      : this.localOptions = localOptions ?? regatta.options;
+      {RegattaOptions? localOptions,
+      this.gpsInformationCallback,
+      this.trailingLine = const []})
+      : localOptions = localOptions ?? regatta.options;
 
   @override
   _RegattaMapState createState() => _RegattaMapState();
@@ -159,6 +165,11 @@ class _RegattaMapState extends State<RegattaMap> {
     Polyline mapLineG;
     Polyline? mapLineGCenter;
 
+    Polyline trailingPolyline = new Polyline(
+        points: widget.trailingLine.map((e) => e.toLatLng()).toList(),
+        color: widget.boatColor,
+        strokeWidth: 3);
+
     List<CircleMarker> mapCircles = [];
     List<Polyline> mapLines = [];
 
@@ -172,7 +183,7 @@ class _RegattaMapState extends State<RegattaMap> {
                     angle: heading,
                     child: Icon(
                       Icons.navigation,
-                      color: Colors.deepPurple,
+                      color: widget.boatColor,
                       size: 30,
                     )),
               ),
@@ -260,7 +271,7 @@ class _RegattaMapState extends State<RegattaMap> {
           isDotted: true);
     }
 
-    mapLines.addAll([mapLineS, mapLineG]);
+    mapLines.addAll([mapLineS, mapLineG, trailingPolyline]);
     if (widget.localOptions.visibilitySlCenterline && mapLineSCenter != null)
       mapLines.add(mapLineSCenter);
     if (widget.localOptions.visibilityGateCenterline && mapLineGCenter != null)
@@ -411,7 +422,7 @@ class _RegattaMapState extends State<RegattaMap> {
               17);
 
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('In GPS mode only zoom and rotation are enable'),
+            content: Text('Live update deactivated'),
           ));
           _viewState = ViewState.FREE;
           break;
@@ -419,7 +430,7 @@ class _RegattaMapState extends State<RegattaMap> {
         case ViewState.FREE:
           interActiveFlags = InteractiveFlag.all;
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Live update deactivated'),
+            content: Text('In GPS mode only zoom and rotation are enable'),
           ));
           _viewState = ViewState.GPS;
           break;

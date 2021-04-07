@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import '../playRegatta.dart';
 import 'mainList.dart';
 import "../regattaDatabase.dart";
@@ -19,15 +22,21 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     initList();
+    boat.boatID = 1;
   }
 
   void initList() async {
-    dbHelper.getAllRegattas().then((value) => setState(() => regattas.addAll(value)));
+    dbHelper
+        .getAllRegattas()
+        .then((value) => setState(() => regattas.addAll(value)));
   }
 
-  void newRegatta(Regatta regatta) {
+  void newRegatta(Regatta regatta) async {
     dev.log("Save to List", name: "HomePage");
-    dbHelper.insertRegatta(regatta);
+    regatta.id = await dbHelper.insertRegatta(regatta);
+    var dir = await getApplicationDocumentsDirectory();
+    var regattaDir = Directory(dir.path + "/${regatta.id}");
+    regattaDir.create();
     setState(() => regattas.add(regatta));
   }
 
@@ -48,8 +57,8 @@ class _HomePageState extends State<HomePage> {
 
   void playRegatta(int indexOfRegatta) {
     var regatta = regattas[indexOfRegatta];
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => PlayRegatta(regatta, boat)));
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => PlayRegatta(regatta, boat)));
   }
 
   TextEditingController _regattaNameController = TextEditingController();

@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:math';
+import 'dart:ui';
 
 import 'package:flutter_map/flutter_map.dart';
 import 'package:path_provider/path_provider.dart';
@@ -165,6 +167,7 @@ abstract class Trackingdata {
   }
 
   String toString();
+  LatLng toLatLng();
   int getTick();
   double getTime();
   double getLatitude();
@@ -225,6 +228,11 @@ class _TrackingdataOrigin implements Trackingdata {
   double getTime() {
     return locationData.time;
   }
+
+  @override
+  LatLng toLatLng() {
+    return LatLng(locationData.latitude, locationData.longitude);
+  }
 }
 
 class _TrackingdataFromText implements Trackingdata {
@@ -283,6 +291,11 @@ class _TrackingdataFromText implements Trackingdata {
   @override
   double getTime() {
     return _time;
+  }
+
+  @override
+  LatLng toLatLng() {
+    return LatLng(_lat, _lon);
   }
 }
 
@@ -366,6 +379,8 @@ class Boat implements DatabaseObject {
 
   late final String name;
   int? boatID;
+  Color boatColor = Color.fromRGBO(
+      Random().nextInt(256), Random().nextInt(256), Random().nextInt(256), 1);
 
   Boat(this.name);
   Boat.fromMap(Map<String, dynamic> map) {
@@ -386,7 +401,7 @@ class Boat implements DatabaseObject {
 }
 
 class DatabaseHelper {
-  static final String _databaseName = "RegattaDatabase2.db";
+  static final String _databaseName = "RegattaDatabase.db";
   static final int _databaseVersion = 1;
   Database? _database;
 
@@ -412,7 +427,7 @@ class DatabaseHelper {
   }
 
   Future _onCreate(Database db, int version) async {
-    String create = """
+    String createRegatta = """
     CREATE TABLE ${Regatta.dbTableName} (
       ${Regatta.dbID} INTEGER PRIMARY KEY,
       ${Regatta.dbListID} INTEGER NOT NULL,
@@ -427,34 +442,40 @@ class DatabaseHelper {
       ${RegattaOptions.dbStartinglineRadius} REAL NOT NULL,
       ${RegattaOptions.dbVisibilityGateCenterline} INTEGER NOT NULL,
       ${RegattaOptions.dbVisibilitySlCenterlineLength} INTEGER NOT NULL
-    );
+    );""";
 
+    String createBoat = """
     CREATE TABLE ${Boat.dbTableName} (
       ${Boat.dbID} INTEGER PRIMARY KEY,
       ${Boat.dbName} TEXT NOT NULL
-    );
+    );""";
 
+    String createTrack = """
     CREATE TABLE ${Track.dbTableName} (
       ${Track.dbID} INTEGER NOT NULL,
       ${Track.dbBID} INTEGER NOT NULL,
       ${Track.dbRID} INTEGER NOT NULL,
       ${Track.dbTrackFilePath} TEXT,
-      PRIMARY KEY(${Track.dbID}, ${Track.dbBID}, ${Track.dbRID})
+      PRIMARY KEY(${Track.dbID}, ${Track.dbBID}, ${Track.dbRID}),
 
       FOREIGN KEY(${Track.dbBID}) REFERENCES ${Boat.dbTableName}(${Boat.dbID})
         ON UPDATE CASCADE
-        ON DELETE SET NULL;
+        ON DELETE SET NULL,
 
       FOREIGN KEY(${Track.dbRID}) REFERENCES ${Regatta.dbTableName}(${Regatta.dbID})
         ON UPDATE CASCADE
-        ON DELETE SET NULL;
+        ON DELETE SET NULL
     );
 
-    INSERT INTO ${Boat.dbTableName}(${Boat.dbName})
-      VALUES('OranJeton');
     """;
 
-    await db.execute(create);
+    Batch batch = db.batch();
+    batch.execute(createRegatta);
+    batch.execute(createBoat);
+    batch.execute(createTrack);
+    batch.insert(Boat.dbTableName, Boat("OranJeton").toMap());
+
+    await batch.commit(noResult: true);
   }
 
   Future<int> insertRegatta(Regatta regatta) async {

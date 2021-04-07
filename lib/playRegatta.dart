@@ -48,6 +48,13 @@ class _PlayRegattaState extends State<PlayRegatta> {
     setState(() => this.locationData = data);
   }
 
+  int _getTrailingIndex(int trailingLength) {
+    if (this.trackingData.length > trailingLength)
+      return this.trackingData.length - trailingLength;
+    else
+      return 0;
+  }
+
   void onTick(int tick) {
     // dev.log("onTick", name: "tick");
     if (locationData != null) {
@@ -63,8 +70,7 @@ class _PlayRegattaState extends State<PlayRegatta> {
     dev.log("onRaceStop", name: "stop");
     Track track =
         Track(widget.regatta.id!, round, widget.boat.boatID!, trackingData);
-    dbHelper.insertTrack(track);
-    trackingData.clear();
+    dbHelper.insertTrack(track).then((_) => trackingData.clear());
     round++;
   }
 
@@ -93,6 +99,7 @@ class _PlayRegattaState extends State<PlayRegatta> {
               widget.regatta,
               localOptions: this.localOptions,
               gpsInformationCallback: setLocationData,
+              trailingLine: trackingData.sublist(_getTrailingIndex(10)),
             ),
             Informations(constraints, this.locationData, this.onRaceStart,
                 this.onTick, this.onRaceStop)
