@@ -4,10 +4,14 @@ import 'package:location/location.dart';
 import "package:proj4dart/proj4dart.dart";
 
 class MyPoint extends Point {
-  final double x;
-  final double y;
+  late final double x;
+  late final double y;
 
   MyPoint(this.x, this.y);
+  MyPoint.fromLatLng(LatLng latLng) {
+    x = latLng.longitude;
+    y = latLng.latitude;
+  }
 
   bool equals(MyPoint? otherPoint) {
     if (otherPoint != null)

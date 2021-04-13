@@ -27,6 +27,8 @@ class _PlayRegattaState extends State<PlayRegatta> {
   LocationData? locationData;
   late int round;
 
+  double distanceTraveled = 0;
+
   final List<Trackingdata> trackingData = [];
 
   @override
@@ -59,7 +61,10 @@ class _PlayRegattaState extends State<PlayRegatta> {
   void onTick(int tick) {
     // dev.log("onTick", name: "tick");
     if (locationData != null) {
-      trackingData.add(Trackingdata(tick, locationData!));
+      distanceTraveled += MyPoint.fromLatLng(trackingData.last.toLatLng())
+          .getGreatCircleDistanceToPoint(MyPoint(
+              locationData!.latitude, locationData!.longitude));
+      trackingData.add(Trackingdata.fromOrigin(tick, locationData!));
     }
   }
 
@@ -94,19 +99,17 @@ class _PlayRegattaState extends State<PlayRegatta> {
         ),
         body: LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
-
-          return SlidingRows(constraints: constraints, topChild:
-            RegattaMap(
-              this.mapController,
-              widget.regatta,
-              localOptions: this.localOptions,
-              gpsInformationCallback: setLocationData,
-              trailingLine: trackingData.sublist(_getTrailingIndex(10)),
-            ),
-            bottomChild:
-            Informations(this.locationData, this.onRaceStart,
-                this.onTick, this.onRaceStop)
-          );
+          return SlidingRows(
+              constraints: constraints,
+              topChild: RegattaMap(
+                this.mapController,
+                widget.regatta,
+                localOptions: this.localOptions,
+                gpsInformationCallback: setLocationData,
+                trailingLine: trackingData.sublist(_getTrailingIndex(10)),
+              ),
+              bottomChild: Informations(this.locationData, this.onRaceStart,
+                  this.onTick, this.onRaceStop));
         }));
   }
 }

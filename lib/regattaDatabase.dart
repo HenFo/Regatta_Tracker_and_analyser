@@ -144,156 +144,52 @@ class RegattaInformation {
   RegattaInformation(this.title, this.subtitle, this.information);
 }
 
-abstract class Trackingdata {
-  factory Trackingdata(int tick, LocationData locationData) {
-    return _TrackingdataOrigin(tick, locationData);
+class Trackingdata {
+  late final int _tick;
+  late final double _time;
+  late final double _lat;
+  late final double _lon;
+  late final double _accuracy;
+  late final double _speed;
+  late final double _speedAccuracy;
+  late final double _heading;
+  late final double _distance;
+
+  Trackingdata.fromOrigin(int tick, LocationData locationData,
+      {double distance = 0}) {
+    this._tick = tick;
+    this._time = locationData.time;
+    this._lat = locationData.latitude;
+    this._lon = locationData.longitude;
+    this._accuracy = locationData.accuracy;
+    this._speed = locationData.speed;
+    this._speedAccuracy = locationData.speedAccuracy;
+    this._heading = locationData.heading;
+    this._distance = distance;
   }
 
-  factory Trackingdata.fromText(String text) {
+  Trackingdata.fromText(String text) {
     var split = text.trim().split(",");
-    return _TrackingdataFromText(
-        int.parse(split[0]),
-        double.parse(split[1]),
-        double.parse(split[2]),
-        double.parse(split[3]),
-        double.parse(split[4]),
-        double.parse(split[5]),
-        double.parse(split[6]),
-        double.parse(split[7]));
+    this._tick = int.parse(split[0]);
+    this._time = double.parse(split[1]);
+    this._lat = double.parse(split[2]);
+    this._lon = double.parse(split[3]);
+    this._accuracy = double.parse(split[4]);
+    this._speed = double.parse(split[5]);
+    this._speedAccuracy = double.parse(split[6]);
+    this._heading = double.parse(split[7]);
+    this._distance = double.parse(split[8]);
   }
 
   static String getCSVHead() {
-    return "tick,timestamp,lat,long,accuracyInM,speed,speedAccuracy,heading";
+    return "tick,timestamp,lat,long,accuracyInM,speed,speedAccuracy,heading,distanceTraveled";
   }
-
-  String toString();
-  LatLng toLatLng();
-  int getTick();
-  double getTime();
-  double getLatitude();
-  double getLongitude();
-  double getAccuracy();
-  double getSpeed();
-  double getSpeedAccuracy();
-  double getHeading();
-}
-
-class _TrackingdataOrigin implements Trackingdata {
-  final int _tick;
-  final LocationData locationData;
-
-  _TrackingdataOrigin(this._tick, this.locationData);
 
   @override
   String toString() {
-    return "$_tick,${locationData.time},${locationData.latitude},${locationData.longitude},${locationData.accuracy},${locationData.speed},${locationData.speedAccuracy},${locationData.heading}";
+    return "$_tick,$_time,$_lat,$_lon,$_accuracy,$_speed,$_speedAccuracy,$_heading,$_distance";
   }
 
-  @override
-  double getAccuracy() {
-    return locationData.accuracy;
-  }
-
-  @override
-  double getHeading() {
-    return locationData.heading;
-  }
-
-  @override
-  double getLatitude() {
-    return locationData.latitude;
-  }
-
-  @override
-  double getLongitude() {
-    return locationData.longitude;
-  }
-
-  @override
-  double getSpeed() {
-    return locationData.speed;
-  }
-
-  @override
-  double getSpeedAccuracy() {
-    return locationData.speedAccuracy;
-  }
-
-  @override
-  int getTick() {
-    return _tick;
-  }
-
-  @override
-  double getTime() {
-    return locationData.time;
-  }
-
-  @override
-  LatLng toLatLng() {
-    return LatLng(locationData.latitude, locationData.longitude);
-  }
-}
-
-class _TrackingdataFromText implements Trackingdata {
-  final int _tick;
-  final double _time;
-  final double _lat;
-  final double _lon;
-  final double _accuracy;
-  final double _speed;
-  final double _speedAccuracy;
-  final double _heading;
-
-  _TrackingdataFromText(this._tick, this._time, this._lat, this._lon,
-      this._accuracy, this._speed, this._speedAccuracy, this._heading);
-
-  @override
-  String toString() {
-    return "$_tick,$_time,$_lat,$_lon,$_accuracy,$_speed,$_speedAccuracy,$_heading";
-  }
-
-  @override
-  double getAccuracy() {
-    return _accuracy;
-  }
-
-  @override
-  double getHeading() {
-    return _heading;
-  }
-
-  @override
-  double getLatitude() {
-    return _lat;
-  }
-
-  @override
-  double getLongitude() {
-    return _lon;
-  }
-
-  @override
-  double getSpeed() {
-    return _speed;
-  }
-
-  @override
-  double getSpeedAccuracy() {
-    return _speedAccuracy;
-  }
-
-  @override
-  int getTick() {
-    return _tick;
-  }
-
-  @override
-  double getTime() {
-    return _time;
-  }
-
-  @override
   LatLng toLatLng() {
     return LatLng(_lat, _lon);
   }
