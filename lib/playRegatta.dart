@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/raceSettings.dart';
+import 'package:flutter_application_1/slidingRowsWidget.dart';
 import 'package:flutter_map/flutter_map.dart';
 import "package:latlong/latlong.dart";
 import 'package:location/location.dart';
@@ -93,7 +94,8 @@ class _PlayRegattaState extends State<PlayRegatta> {
         ),
         body: LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
-          return Column(children: <Widget>[
+
+          return SlidingRows(constraints: constraints, topChild:
             RegattaMap(
               this.mapController,
               widget.regatta,
@@ -101,9 +103,10 @@ class _PlayRegattaState extends State<PlayRegatta> {
               gpsInformationCallback: setLocationData,
               trailingLine: trackingData.sublist(_getTrailingIndex(10)),
             ),
-            Informations(constraints, this.locationData, this.onRaceStart,
+            bottomChild:
+            Informations(this.locationData, this.onRaceStart,
                 this.onTick, this.onRaceStop)
-          ]);
+          );
         }));
   }
 }

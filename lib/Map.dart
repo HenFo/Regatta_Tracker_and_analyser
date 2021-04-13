@@ -21,9 +21,7 @@ class RegattaMap extends StatefulWidget {
   final Color slColor = Colors.amber;
   final Color gateColor = Colors.lightGreen;
   final Color tmColor = Colors.blueGrey;
-  // final Color boatColor = Color.fromRGBO(
-  //     Random().nextInt(256), Random().nextInt(256), Random().nextInt(256), 1);
-  final Color boatColor = Colors.deepPurple;
+  // final Color boatColor = Colors.deepPurple;
 
   RegattaMap(this.mapController, this.regatta,
       {RegattaOptions? localOptions,
@@ -45,6 +43,9 @@ class _RegattaMapState extends State<RegattaMap> {
   final proj4.ProjectionTuple projTuple = new proj4.ProjectionTuple(
       fromProj: proj4.Projection.WGS84, toProj: proj4.Projection.GOOGLE);
 
+  final Color boatColor = Color.fromRGBO(
+      Random().nextInt(256), Random().nextInt(256), Random().nextInt(256), 1);
+
   LocationData? _currentLocation;
 
   // bool _liveUpdate = false;
@@ -64,6 +65,7 @@ class _RegattaMapState extends State<RegattaMap> {
   void initState() {
     super.initState();
     initLocationService();
+    dev.log("init map");
   }
 
   @override
@@ -167,7 +169,7 @@ class _RegattaMapState extends State<RegattaMap> {
 
     Polyline trailingPolyline = new Polyline(
         points: widget.trailingLine.map((e) => e.toLatLng()).toList(),
-        color: widget.boatColor,
+        color: boatColor,
         strokeWidth: 3);
 
     List<CircleMarker> mapCircles = [];
@@ -183,7 +185,7 @@ class _RegattaMapState extends State<RegattaMap> {
                     angle: heading,
                     child: Icon(
                       Icons.navigation,
-                      color: widget.boatColor,
+                      color: boatColor,
                       size: 30,
                     )),
               ),
