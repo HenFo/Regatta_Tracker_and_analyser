@@ -63,12 +63,14 @@ class _MapDrawerEdit extends AbstractMapDrawer implements MapDrawer {
 
   _MapDrawerEdit(this.regatta, this.localOptions);
 
+  @override
   void reset() {}
   void update(Regatta regatta, RegattaOptions localOptions) {
     this.regatta = regatta;
     this.localOptions = localOptions;
   }
 
+  @override
   double getCourseOrientation() {
     if (regatta.startingline.isComplete() && regatta.topmark != null) {
       var sLine = regatta.startingline.transformProjection(this._projTuple);
@@ -88,6 +90,7 @@ class _MapDrawerEdit extends AbstractMapDrawer implements MapDrawer {
       return 0;
   }
 
+  @override
   List<Polyline> getMapLines({List<Trackingdata> trailing = const []}) {
     Polyline mapLineS;
     Polyline? mapLineSCenter;
@@ -158,6 +161,7 @@ class _MapDrawerEdit extends AbstractMapDrawer implements MapDrawer {
     return mapLines;
   }
 
+  @override
   List<CircleMarker> getCircleMarker() {
     List<CircleMarker> mapCircles = [];
 
@@ -228,6 +232,7 @@ class _LazyMapDrawer implements MapDrawer {
     _mapDrawerEdit = _MapDrawerEdit(regatta, localOptions);
   }
 
+  @override
   void reset() {
     _courseOrientation = null;
     _polylines = null;

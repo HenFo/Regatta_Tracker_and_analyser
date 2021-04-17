@@ -120,8 +120,10 @@ class _RegattaMapState extends State<RegattaMap> {
       print(e);
       if (e.code == 'PERMISSION_DENIED') {
         _serviceError = e.message;
+        print(_serviceError);
       } else if (e.code == 'SERVICE_STATUS_ERROR') {
         _serviceError = e.message;
+        print(_serviceError);
       }
       location = null;
     }
