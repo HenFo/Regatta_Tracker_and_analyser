@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/raceSettings.dart';
 import 'package:flutter_application_1/slidingRowsWidget.dart';
 import 'package:flutter_map/flutter_map.dart';
-import "package:latlong/latlong.dart";
 import 'package:location/location.dart';
 import 'informationWidget.dart';
 import 'map.dart';
 import 'helperClasses.dart';
+import 'mapDrawer.dart';
 import "regattaDatabase.dart";
 import "dart:developer" as dev;
 
@@ -22,6 +22,7 @@ class PlayRegatta extends StatefulWidget {
 
 class _PlayRegattaState extends State<PlayRegatta> {
   late MapController mapController;
+  late MapDrawer mapDrawer;
   late RegattaOptions localOptions;
   DatabaseHelper dbHelper = DatabaseHelper();
   LocationData? locationData;
@@ -36,6 +37,7 @@ class _PlayRegattaState extends State<PlayRegatta> {
     super.initState();
     this.mapController = new MapController();
     this.localOptions = widget.regatta.options.clone();
+    this.mapDrawer = MapDrawer(regatta: widget.regatta, localOptions: localOptions);
     _getRoundsCount();
   }
 
@@ -44,7 +46,10 @@ class _PlayRegattaState extends State<PlayRegatta> {
   }
 
   void setOptions(RegattaOptions newOptions) {
-    setState(() => this.localOptions = newOptions);
+    setState(() {
+      this.localOptions = newOptions;
+      mapDrawer.update(widget.regatta, this.localOptions);
+    });
   }
 
   void setLocationData(LocationData data) {
@@ -61,9 +66,11 @@ class _PlayRegattaState extends State<PlayRegatta> {
   void onTick(int tick) {
     // dev.log("onTick", name: "tick");
     if (locationData != null) {
-      distanceTraveled += MyPoint.fromLatLng(trackingData.last.toLatLng())
-          .getGreatCircleDistanceToPoint(MyPoint(
-              locationData!.latitude, locationData!.longitude));
+      if (trackingData.isNotEmpty) {
+        distanceTraveled += MyPoint.fromLatLng(trackingData.last.toLatLng())
+            .getGreatCircleDistanceToPoint(MyPoint(
+            locationData!.latitude, locationData!.longitude));
+      }
       trackingData.add(Trackingdata.fromOrigin(tick, locationData!));
     }
   }
@@ -103,6 +110,7 @@ class _PlayRegattaState extends State<PlayRegatta> {
               constraints: constraints,
               topChild: RegattaMap(
                 this.mapController,
+                this.mapDrawer,
                 widget.regatta,
                 localOptions: this.localOptions,
                 gpsInformationCallback: setLocationData,

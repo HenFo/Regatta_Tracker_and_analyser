@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../helperClasses.dart';
 import "../regattaDatabase.dart";
 
 
@@ -37,6 +36,12 @@ class _MainListState extends State<MainList> {
                 ),
                 IconButton(
                   icon: Icon(Icons.play_arrow),
+                  onPressed: () {
+                    widget.playRegatta(index);
+                  },
+                ),
+                IconButton(
+                  icon: Icon(Icons.analytics),
                   onPressed: () {
                     widget.playRegatta(index);
                   },

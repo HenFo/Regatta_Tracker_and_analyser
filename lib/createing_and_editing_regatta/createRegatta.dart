@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/mapDrawer.dart';
 import 'package:proj4dart/proj4dart.dart' as proj4;
 import '../raceSettings.dart';
 import 'editButtons.dart';
@@ -7,7 +8,7 @@ import "../regattaDatabase.dart";
 import "package:flutter_map/flutter_map.dart";
 import "package:latlong/latlong.dart";
 import "dart:developer" as dev;
-import "../Map.dart";
+import "package:flutter_application_1/map.dart";
 
 class CreateRegatta extends StatefulWidget {
   final String name;
@@ -29,6 +30,7 @@ class _CreateRegattaState extends State<CreateRegatta> {
   late RegattaOptions localOptions;
 
   late MapController mapController;
+  late MapDrawer mapDrawer;
 
   MyPoint? gateStart;
   MyPoint? gateEnd;
@@ -41,6 +43,8 @@ class _CreateRegattaState extends State<CreateRegatta> {
     super.initState();
     mapController = MapController();
     regatta = new Regatta(widget.id, widget.name);
+    localOptions = regatta.options.clone();
+    mapDrawer = MapDrawer(regatta: regatta, localOptions: localOptions, editSession: true);
 
     if (widget.editRegatta != null) {
       regatta.topmark = widget.editRegatta!.topmark;
@@ -54,11 +58,14 @@ class _CreateRegattaState extends State<CreateRegatta> {
       slEnd = regatta.startingline.p2;
     }
 
-    localOptions = regatta.options.clone();
+
   }
 
   void setRegattaOptions(RegattaOptions newOptions) {
-    setState(() => localOptions = newOptions);
+    setState(() {
+      localOptions = newOptions;
+      mapDrawer.update(regatta, localOptions);
+    });
   }
 
   bool _save() {
@@ -110,7 +117,7 @@ class _CreateRegattaState extends State<CreateRegatta> {
         ),
         body: Column(
           children: <Widget>[
-            RegattaMap(mapController, regatta, localOptions: localOptions),
+            RegattaMap(mapController, mapDrawer, regatta, localOptions: localOptions),
             EditButtons(mapController, _addToMap, _save)
           ],
         ));
@@ -150,6 +157,7 @@ class _CreateRegattaState extends State<CreateRegatta> {
           regatta.gate = new Gate(gateStart, gateEnd, radius: 5);
           break;
       }
+      mapDrawer.update(regatta, localOptions);
     });
   }
 }

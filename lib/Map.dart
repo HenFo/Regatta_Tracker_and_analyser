@@ -2,17 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_application_1/mapDrawer.dart';
 import "package:flutter_map/flutter_map.dart";
 import "package:latlong/latlong.dart";
 import "dart:developer" as dev;
-import 'helperClasses.dart';
 import "regattaDatabase.dart";
-import "package:proj4dart/proj4dart.dart" as proj4;
 import 'package:location/location.dart';
 import "dart:math";
 
 class RegattaMap extends StatefulWidget {
   final MapController mapController;
+  final MapDrawer mapDrawer;
   final Regatta regatta;
   late final RegattaOptions localOptions;
   final Function? gpsInformationCallback;
@@ -23,7 +23,7 @@ class RegattaMap extends StatefulWidget {
   final Color tmColor = Colors.blueGrey;
   // final Color boatColor = Colors.deepPurple;
 
-  RegattaMap(this.mapController, this.regatta,
+  RegattaMap(this.mapController, this.mapDrawer, this.regatta,
       {RegattaOptions? localOptions,
       this.gpsInformationCallback,
       this.trailingLine = const []})
@@ -39,13 +39,6 @@ class RegattaMap extends StatefulWidget {
 enum ViewState { GPS, FREE, COURSE }
 
 class _RegattaMapState extends State<RegattaMap> {
-  double _courseOrientation = 0;
-  final proj4.ProjectionTuple projTuple = new proj4.ProjectionTuple(
-      fromProj: proj4.Projection.WGS84, toProj: proj4.Projection.GOOGLE);
-
-  final Color boatColor = Color.fromRGBO(
-      Random().nextInt(256), Random().nextInt(256), Random().nextInt(256), 1);
-
   LocationData? _currentLocation;
 
   // bool _liveUpdate = false;
@@ -156,145 +149,10 @@ class _RegattaMapState extends State<RegattaMap> {
       heading = 0;
     }
 
-    this._courseOrientation = _getCourseOrientation();
     if (_northAlignment) {
-      widget.mapController.rotate(this._courseOrientation);
+      widget.mapController.rotate(widget.mapDrawer.getCourseOrientation());
     }
 
-    Polyline mapLineS;
-    Polyline? mapLineSCenter;
-
-    Polyline mapLineG;
-    Polyline? mapLineGCenter;
-
-    Polyline trailingPolyline = new Polyline(
-        points: widget.trailingLine.map((e) => e.toLatLng()).toList(),
-        color: boatColor,
-        strokeWidth: 3);
-
-    List<CircleMarker> mapCircles = [];
-    List<Polyline> mapLines = [];
-
-    var markers = <Marker>[
-      Marker(
-          width: 80,
-          height: 80,
-          point: currentLatLng,
-          builder: (ctx) => Container(
-                child: Transform.rotate(
-                    angle: heading,
-                    child: Icon(
-                      Icons.navigation,
-                      color: boatColor,
-                      size: 30,
-                    )),
-              ),
-          anchorPos: AnchorPos.align(AnchorAlign.center))
-    ];
-
-    // Map features for Startingline
-    mapLineS = new Polyline(
-        points: widget.regatta.startingline.toLatLng(),
-        strokeWidth: 4,
-        color: widget.slColor,
-        borderColor: Colors.black);
-
-    mapCircles.addAll(widget.regatta.startingline.toLatLng().map((latlng) {
-      return CircleMarker(
-          point: latlng,
-          color: widget.slColor.withOpacity(0.5),
-          useRadiusInMeter: true,
-          borderStrokeWidth: 1,
-          borderColor: Colors.black26,
-          radius: 3);
-    }).toList());
-
-    mapCircles.addAll(widget.regatta.startingline.toLatLng().map((latlng) {
-      return CircleMarker(
-          point: latlng,
-          useRadiusInMeter: true,
-          radius: 1,
-          color: Colors.black);
-    }).toList());
-
-    //Center line start
-    if (widget.regatta.startingline.isComplete() &&
-        widget.regatta.startingline.isActualLine()) {
-      mapLineSCenter = new Polyline(
-          points: widget.regatta.startingline
-              .transformProjection(this.projTuple)
-              .getOrthogonalLine(widget.localOptions.centerlineLength)
-              .transformProjection(this.projTuple, inverse: true)
-              .toLatLng(),
-          strokeWidth: 3,
-          color: widget.slColor,
-          isDotted: true,
-          borderColor: Colors.black);
-    }
-
-    // Map features for Gate
-    mapLineG = new Polyline(
-        points: widget.regatta.gate.toLatLng(),
-        strokeWidth: 3,
-        color: widget.gateColor,
-        borderColor: Colors.black,
-        isDotted: true);
-
-    mapCircles.addAll(widget.regatta.gate.toLatLng().map((latlng) {
-      return CircleMarker(
-          point: latlng,
-          color: widget.gateColor.withOpacity(0.5),
-          useRadiusInMeter: true,
-          borderStrokeWidth: 1,
-          borderColor: Colors.black26,
-          radius: 10);
-    }).toList());
-
-    mapCircles.addAll(widget.regatta.gate.toLatLng().map((latlng) {
-      return CircleMarker(
-          point: latlng,
-          useRadiusInMeter: true,
-          radius: 1,
-          color: Colors.black);
-    }).toList());
-
-    // center line gate
-    if (widget.regatta.gate.isComplete() &&
-        widget.regatta.gate.isActualLine()) {
-      mapLineGCenter = new Polyline(
-          points: widget.regatta.gate
-              .transformProjection(this.projTuple)
-              .getOrthogonalLine(widget.localOptions.centerlineLength)
-              .transformProjection(this.projTuple, inverse: true)
-              .toLatLng(),
-          strokeWidth: 2,
-          color: widget.gateColor,
-          borderColor: Colors.black,
-          isDotted: true);
-    }
-
-    mapLines.addAll([mapLineS, mapLineG, trailingPolyline]);
-    if (widget.localOptions.visibilitySlCenterline && mapLineSCenter != null)
-      mapLines.add(mapLineSCenter);
-    if (widget.localOptions.visibilityGateCenterline && mapLineGCenter != null)
-      mapLines.add(mapLineGCenter);
-
-    // Map features for Topmark
-    if (widget.regatta.topmark != null) {
-      LatLng point = widget.regatta.topmark!.toLatLng();
-      mapCircles.add(new CircleMarker(
-          point: point,
-          useRadiusInMeter: true,
-          radius: 14,
-          borderColor: Colors.black26,
-          borderStrokeWidth: 1,
-          color: widget.tmColor.withOpacity(0.5)));
-      mapCircles.add(new CircleMarker(
-          point: point,
-          useRadiusInMeter: true,
-          radius: 1,
-          color: Colors.black));
-    }
 
     return Flexible(
         child: Stack(children: [
@@ -312,9 +170,9 @@ class _RegattaMapState extends State<RegattaMap> {
             tileProvider: NonCachingNetworkTileProvider(),
           ),
           // MarkerLayerOptions(markers: mapMarker),
-          PolylineLayerOptions(polylines: mapLines),
-          CircleLayerOptions(circles: mapCircles),
-          MarkerLayerOptions(markers: markers),
+          PolylineLayerOptions(polylines: widget.mapDrawer.getMapLines(trailing: widget.trailingLine)),
+          CircleLayerOptions(circles: widget.mapDrawer.getCircleMarker()),
+          MarkerLayerOptions(markers: widget.mapDrawer.getPositionMarker(currentLatLng, heading)),
         ],
       ),
       Row(
@@ -347,7 +205,7 @@ class _RegattaMapState extends State<RegattaMap> {
         onPressed: _disabled
             ? null
             : () {
-                widget.mapController.rotate(this._courseOrientation);
+                widget.mapController.rotate(widget.mapDrawer.getCourseOrientation());
                 var bbox = widget.regatta.calculateBbox();
                 widget.mapController.fitBounds(bbox);
                 // var zoom = widget.mapController.zoom;
@@ -359,26 +217,6 @@ class _RegattaMapState extends State<RegattaMap> {
     }
   }
 
-  double _getCourseOrientation() {
-    if (widget.regatta.startingline.isComplete() &&
-        widget.regatta.topmark != null) {
-      var sLine =
-          widget.regatta.startingline.transformProjection(this.projTuple);
-      Vector sLineVec = new Vector(sLine.p1!, sLine.p2!);
-      Vector orthoLine = sLineVec.getOrthogonalVector();
-      bool isPointRightToLine = sLineVec.compareToPoint(
-              widget.regatta.topmark!.transformProjection(this.projTuple)) >
-          0;
-
-      Vector north = new Vector(MyPoint(0, 0), MyPoint(0, 1));
-      var angle = north.getAngleToVector(orthoLine);
-
-      if (isPointRightToLine) angle += 180;
-
-      return angle;
-    } else
-      return 0;
-  }
 
   Widget _viewButton() {
     switch (_viewState) {

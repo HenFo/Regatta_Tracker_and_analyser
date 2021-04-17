@@ -51,6 +51,15 @@ class Regatta implements DatabaseObject {
     gate = Gate.fromText(map[dbGate], radius: options.gateRadius);
   }
 
+  bool equalLayout(Regatta otherRegatta) {
+    if (this.topmark != null && otherRegatta.topmark != null) {
+      return this.topmark!.equals(otherRegatta.topmark) &&
+          this.gate.equals(otherRegatta.gate) &&
+          this.startingline.equals(otherRegatta.startingline);
+    }
+    return false;
+  }
+
   LatLngBounds calculateBbox() {
     var points = <LatLng>[];
     if (topmark != null) {
@@ -129,6 +138,15 @@ class RegattaOptions {
     options.center = this.center;
 
     return options;
+  }
+
+  bool equals(RegattaOptions options) {
+    return this.visibilityGateCenterline == options.visibilityGateCenterline &&
+        this.center == options.center &&
+        this.centerlineLength == options.centerlineLength &&
+        this.gateRadius == options.gateRadius &&
+        this.startinglineRadius == options.startinglineRadius &&
+        this.visibilitySlCenterline == options.visibilitySlCenterline;
   }
 }
 
